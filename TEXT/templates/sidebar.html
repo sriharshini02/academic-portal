@@ -1,0 +1,134 @@
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="teacher-profile">
+    <div class="teacher-avatar">👨‍🏫</div>
+    <div class="teacher-info">
+      <h2>{{ teacher_name }}</h2>
+      <p>{{ department }}</p>
+    </div>
+  </div>
+
+  <nav class="nav-menu">
+    <ul>
+      <li class="nav-item">
+        <a
+          href="{{ url_for('teacher_dashboard') }}"
+          class="nav-link {% if request.endpoint == 'teacher_dashboard' %}active{% endif %}"
+        >
+          <i class="fas fa-home"></i>
+          <span>Dashboard</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a
+          href="{{ url_for('upload_page') }}"
+          class="nav-link {% if request.endpoint == 'upload_page' %}active{% endif %}"
+        >
+          <i class="fas fa-upload"></i>
+          <span>Upload Marks</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a
+          href="{{ url_for('view_marks') }}"
+          class="nav-link {% if request.endpoint == 'view_marks' %}active{% endif %}"
+        >
+          <i class="fas fa-table"></i>
+          <span>View Marks</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a
+          href="{{ url_for('marks_analysis') }}"
+          class="nav-link {% if request.endpoint == 'marks_analysis' %}active{% endif %}"
+        >
+          <i class="fas fa-chart-bar"></i>
+          <span>Marks Analysis</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="{{ url_for('logout') }}" class="nav-link">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Logout</span>
+        </a>
+      </li>
+    </ul>
+  </nav>
+</aside>
+
+<!-- Sidebar Styles -->
+<style>
+  .sidebar {
+    background: #8b5cf6;
+    color: white;
+    padding: 1.5rem;
+    min-height: 100vh;
+  }
+
+  .teacher-profile {
+    text-align: center;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 1.5rem;
+  }
+
+  .teacher-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    font-size: 2rem;
+  }
+
+  .teacher-info h2 {
+    font-size: 1.1rem;
+    margin-bottom: 0.3rem;
+    color: white;
+  }
+
+  .teacher-info p {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .nav-menu {
+    list-style: none;
+  }
+
+  .nav-item {
+    margin-bottom: 0.5rem;
+  }
+
+  .nav-link {
+    display: flex;
+    align-items: center;
+    padding: 0.8rem 1rem;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+  }
+
+  .nav-link:hover,
+  .nav-link.active {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .nav-link i {
+    margin-right: 0.8rem;
+    font-size: 1.1rem;
+  }
+
+  @media (max-width: 768px) {
+    .dashboard-container {
+      grid-template-columns: 1fr;
+    }
+    .sidebar {
+      display: none;
+    }
+  }
+</style>

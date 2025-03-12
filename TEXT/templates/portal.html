@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header {
+            width: 100%;
+            padding: 3rem 2rem;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            color: #94a3b8;
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+
+        .portal-container {
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            gap: 2.5rem;
+            padding: 2rem;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .portal-card {
+            width: 320px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 2.5rem 2rem;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .portal-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 24px;
+            padding: 2px;
+            background: linear-gradient(135deg, #818cf8, #c084fc);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+        }
+
+        .portal-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .portal-icon {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            z-index: 1;
+            animation: float 3s ease-in-out infinite;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .portal-title {
+            font-size: 1.75rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            color: white;
+            position: relative;
+            z-index: 1;
+        }
+
+        .portal-description {
+            font-size: 1rem;
+            margin-bottom: 2rem;
+            color: #94a3b8;
+            line-height: 1.6;
+            position: relative;
+            z-index: 1;
+            flex-grow: 1;
+        }
+
+        .portal-button {
+            background: linear-gradient(135deg, #818cf8, #c084fc);
+            color: white;
+            border: none;
+            padding: 0.9rem 2rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            position: relative;
+            z-index: 1;
+            box-shadow: 0 4px 15px rgba(129, 140, 248, 0.3);
+        }
+
+        .portal-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(129, 140, 248, 0.5);
+        }
+
+        .decoration-circle {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            z-index: 0;
+        }
+
+        .circle-1 {
+            width: 800px;
+            height: 800px;
+            background: rgba(129, 140, 248, 0.15);
+            top: -400px;
+            right: -200px;
+        }
+
+        .circle-2 {
+            width: 600px;
+            height: 600px;
+            background: rgba(192, 132, 252, 0.15);
+            bottom: -300px;
+            left: -100px;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 2rem 1rem;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .portal-container {
+                padding: 1.5rem;
+                gap: 1.5rem;
+            }
+
+            .portal-card {
+                width: 100%;
+                max-width: 340px;
+                padding: 2rem 1.5rem;
+            }
+        }
+        .portal-container {
+    gap: 1.5rem;  /* Reduced from 2.5rem */
+    padding: 1.5rem;  /* Reduced from 2rem */
+    margin-top: 1rem;  /* Reduced from 2rem */
+}
+
+.header {
+    padding: 2rem 1.5rem;  /* Reduced from 3rem 2rem */
+}
+    </style>
+</head>
+<body>
+    <div class="decoration-circle circle-1"></div>
+    <div class="decoration-circle circle-2"></div>
+
+    <div class="header">
+        <h1>Welcome to Academic Portal</h1>
+        <p>Select your role to continue</p>
+    </div>
+
+    <div class="portal-container">
+        <div class="portal-card">
+            <div class="portal-icon">👨‍🎓</div>
+            <h2 class="portal-title">Student Portal</h2>
+            <p class="portal-description">Access your courses, assignments, and track your academic progress. Stay connected with your educational journey.</p>
+            <a href="/student/login" class="portal-button">Enter as Student</a>
+        </div>
+
+        <div class="portal-card">
+            <div class="portal-icon">👨‍🏫</div>
+            <h2 class="portal-title">Teacher Portal</h2>
+            <p class="portal-description">Manage your classes, grade assignments, and monitor student performance. Enhance your teaching experience.</p>
+            <a href="/teacher/login" class="portal-button">Enter as Teacher</a>
+        </div>
+    </div>
+</body>
+</html> 

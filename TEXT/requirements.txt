@@ -1,0 +1,15 @@
+opencv-python 
+numpy 
+pillow 
+google-generativeai
+python-dotenv
+flask
+pytesseract
+pandas
+keras
+xlsxwriter
+flask-mysqldb
+Flask==2.3.3
+Werkzeug==2.3.7
+openpyxl
+

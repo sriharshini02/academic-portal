@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>View Marks</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Poppins", sans-serif;
+      }
+
+      body {
+        min-height: 100vh;
+        background: #1a1a1a;
+        color: white;
+      }
+
+      .dashboard-container {
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        min-height: 100vh;
+      }
+
+      .main-content {
+        padding: 2rem;
+        background: #1e293b;
+      }
+
+      .filter-controls {
+        background: rgba(30, 41, 59, 0.8);
+        padding: 1rem;
+        border-radius: 0.8rem;
+        margin-bottom: 2rem;
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .filter-controls select {
+        background: rgba(30, 41, 59, 0.8);
+        color: white;
+        border: 1px solid rgba(139, 92, 246, 0.2);
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        min-width: 150px;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 1rem;
+        margin-left: auto;
+      }
+
+      .view-btn,
+      .download-btn {
+        background: #8b5cf6;
+        color: white;
+        border: none;
+        padding: 0.5rem 1.5rem;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .download-btn {
+        background: #10b981;
+      }
+
+      .view-btn:hover,
+      .download-btn:hover {
+        opacity: 0.9;
+        transform: translateY(-2px);
+      }
+
+      .view-btn:disabled,
+      .download-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .marks-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+        background: rgba(30, 41, 59, 0.8);
+        border-radius: 0.8rem;
+        overflow: hidden;
+      }
+
+      .marks-table th,
+      .marks-table td {
+        padding: 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+      }
+
+      .marks-table th {
+        background: #8b5cf6;
+        color: white;
+      }
+
+      .marks-table td input {
+        background: rgba(30, 41, 59, 0.5);
+        border: 1px solid rgba(139, 92, 246, 0.2);
+        color: white;
+        padding: 0.25rem;
+        border-radius: 0.25rem;
+        width: 50px;
+        text-align: center;
+      }
+
+      .marks-table td input:focus {
+        outline: none;
+        border-color: #8b5cf6;
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .edit-btn,
+      .delete-btn,
+      .save-btn,
+      .cancel-btn {
+        padding: 0.25rem 0.5rem;
+        border: none;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+
+      .edit-btn {
+        background: #10b981;
+        color: white;
+      }
+
+      .delete-btn {
+        background: #ef4444;
+        color: white;
+      }
+
+      .save-btn {
+        background: #3b82f6;
+        color: white;
+      }
+
+      .cancel-btn {
+        background: #6b7280;
+        color: white;
+      }
+
+      .edit-btn:hover,
+      .delete-btn:hover,
+      .save-btn:hover,
+      .cancel-btn:hover {
+        transform: translateY(-2px);
+        opacity: 0.9;
+      }
+
+      .editing {
+        background: rgba(139, 92, 246, 0.1);
+      }
+
+      @media (max-width: 768px) {
+        .dashboard-container {
+          grid-template-columns: 1fr;
+        }
+        .filter-controls {
+          flex-direction: column;
+        }
+        .filter-controls select {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dashboard-container">
+      {% include 'sidebar.html' %}
+
+      <main class="main-content">
+        <div class="filter-controls">
+          <select id="yearFilter">
+            <option value="">Select Year</option>
+            {% for year in years %}
+            <option value="{{ year }}">{{ year }}</option>
+            {% endfor %}
+          </select>
+          <select id="subjectFilter">
+            <option value="">Select Subject</option>
+            <option value="java">Java</option>
+            <option value="python">Python</option>
+          </select>
+          <select id="examTypeFilter">
+            <option value="">Select Exam</option>
+            {% for exam_type in exam_types %}
+            <option value="{{ exam_type }}">{{ exam_type }}</option>
+            {% endfor %}
+          </select>
+          <div class="button-group">
+            <button class="view-btn" onclick="viewMarks()">
+              <i class="fas fa-search"></i> View Marks
+            </button>
+            <button
+              class="download-btn"
+              onclick="downloadExcel()"
+              id="downloadBtn"
+              disabled
+            >
+              <i class="fas fa-file-excel"></i> Download Excel
+            </button>
+          </div>
+        </div>
+
+        <div id="marksTableContainer"></div>
+      </main>
+    </div>
+
+    <script>
+      let currentYear, currentSubject, currentExamType;
+      const downloadBtn = document.getElementById("downloadBtn");
+
+      function viewMarks() {
+        currentYear = document.getElementById("yearFilter").value;
+        currentSubject = document.getElementById("subjectFilter").value;
+        currentExamType = document.getElementById("examTypeFilter").value;
+
+        if (!currentYear || !currentSubject || !currentExamType) {
+          alert("Please select all filters");
+          return;
+        }
+
+        fetch(
+          `/api/view-marks?year=${currentYear}&subject=${currentSubject}&examType=${currentExamType}`
+        )
+          .then((response) => response.json())
+          .then((data) => {
+            displayMarks(data);
+            downloadBtn.disabled = data.length === 0;
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Error fetching marks data");
+          });
+      }
+
+      function downloadExcel() {
+        if (!currentYear || !currentSubject || !currentExamType) {
+          alert("Please view marks before downloading");
+          return;
+        }
+
+        window.location.href = `/api/download-marks?year=${currentYear}&subject=${currentSubject}&examType=${currentExamType}`;
+      }
+
+      function displayMarks(data) {
+        const container = document.getElementById("marksTableContainer");
+        let html = `
+          <table class="marks-table">
+            <thead>
+              <tr>
+                <th>Roll Number</th>
+                <th>Subject</th>
+                ${Array.from(
+                  { length: 6 },
+                  (_, i) => `
+                  <th colspan="4">Q${i + 1}</th>
+                `
+                ).join("")}
+                <th>Total</th>
+                <th>Actions</th>
+              </tr>
+              <tr>
+                <th></th>
+                <th></th>
+                ${Array.from(
+                  { length: 6 },
+                  () => `
+                  <th>a</th>
+                  <th>b</th>
+                  <th>c</th>
+                  <th>d</th>
+                `
+                ).join("")}
+                <th></th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+
+        data.forEach((entry) => {
+          html += `
+            <tr data-roll="${entry.roll_number}">
+              <td>${entry.roll_number}</td>
+              <td>${entry.subject}</td>
+          `;
+
+          // Add question marks
+          for (let q = 1; q <= 6; q++) {
+            const qData = entry.questions[`Q${q}`] || {
+              a: 0,
+              b: 0,
+              c: 0,
+              d: 0,
+            };
+            html += `
+              <td><input type="number" min="0" max="8" value="${qData.a}" disabled data-q="${q}" data-part="a"></td>
+              <td><input type="number" min="0" max="8" value="${qData.b}" disabled data-q="${q}" data-part="b"></td>
+              <td><input type="number" min="0" max="8" value="${qData.c}" disabled data-q="${q}" data-part="c"></td>
+              <td><input type="number" min="0" max="8" value="${qData.d}" disabled data-q="${q}" data-part="d"></td>
+            `;
+          }
+
+          html += `
+              <td>${entry.total_marks}</td>
+              <td class="action-buttons">
+                <button class="edit-btn" onclick="editRow(this)">
+                  <i class="fas fa-edit"></i> Edit
+                </button>
+                <button class="delete-btn" onclick="deleteRow(this)">
+                  <i class="fas fa-trash"></i> Delete
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+
+        html += "</tbody></table>";
+        container.innerHTML = html;
+      }
+
+      function editRow(btn) {
+        const row = btn.closest("tr");
+        const inputs = row.querySelectorAll("input");
+        const actionCell = row.querySelector(".action-buttons");
+
+        // Enable editing
+        row.classList.add("editing");
+        inputs.forEach((input) => (input.disabled = false));
+
+        // Change buttons
+        actionCell.innerHTML = `
+          <button class="save-btn" onclick="saveRow(this)">
+            <i class="fas fa-save"></i> Save
+          </button>
+          <button class="cancel-btn" onclick="cancelEdit(this)">
+            <i class="fas fa-times"></i> Cancel
+          </button>
+        `;
+      }
+
+      function saveRow(btn) {
+        const row = btn.closest("tr");
+        const rollNumber = row.dataset.roll;
+        const inputs = row.querySelectorAll("input");
+        const questions = {};
+        let totalMarks = 0;
+
+        // Collect question marks
+        inputs.forEach((input) => {
+          const q = input.dataset.q;
+          const part = input.dataset.part;
+          const value = parseInt(input.value) || 0;
+
+          if (!questions[`Q${q}`]) {
+            questions[`Q${q}`] = { a: 0, b: 0, c: 0, d: 0 };
+          }
+          questions[`Q${q}`][part] = value;
+          totalMarks += value;
+        });
+
+        // Send update request
+        fetch("/api/update-marks", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            roll_number: rollNumber,
+            class_year: currentYear,
+            subject: currentSubject,
+            exam_type: currentExamType,
+            questions: questions,
+            total_marks: totalMarks,
+          }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              // Update total marks display
+              row.querySelector("td:nth-last-child(2)").textContent =
+                totalMarks;
+
+              // Reset row state
+              row.classList.remove("editing");
+              inputs.forEach((input) => (input.disabled = true));
+
+              // Restore action buttons
+              const actionCell = row.querySelector(".action-buttons");
+              actionCell.innerHTML = `
+                <button class="edit-btn" onclick="editRow(this)">
+                  <i class="fas fa-edit"></i> Edit
+                </button>
+                <button class="delete-btn" onclick="deleteRow(this)">
+                  <i class="fas fa-trash"></i> Delete
+                </button>
+              `;
+
+              alert("Marks updated successfully!");
+            } else {
+              alert(data.message || "Failed to update marks");
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Error updating marks");
+          });
+      }
+
+      function cancelEdit(btn) {
+        const row = btn.closest("tr");
+        row.classList.remove("editing");
+
+        // Refresh the marks view to restore original values
+        viewMarks();
+      }
+
+      function deleteRow(btn) {
+        if (!confirm("Are you sure you want to delete this result?")) {
+          return;
+        }
+
+        const row = btn.closest("tr");
+        const rollNumber = row.dataset.roll;
+
+        fetch("/api/delete-marks", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            roll_number: rollNumber,
+            class_year: currentYear,
+            subject: currentSubject,
+            exam_type: currentExamType,
+          }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              row.remove();
+              alert("Result deleted successfully!");
+            } else {
+              alert(data.message || "Failed to delete result");
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Error deleting result");
+          });
+      }
+    </script>
+  </body>
+</html>

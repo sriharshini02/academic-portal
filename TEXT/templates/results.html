@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            background: #1e293b; /* Dark background similar to dashboard */
+            padding: 20px;
+            color: #e2e8f0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(30, 41, 59, 0.8); /* Darker background with transparency */
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            color: #8B5CF6; /* Purple color from dashboard */
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            font-weight: 600;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary {
+            background: #8B5CF6; /* Purple color from dashboard */
+            color: white;
+        }
+
+        .btn-danger {
+            background: #ef4444; /* Red color */
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .json-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: rgba(30, 41, 59, 0.5);
+            font-size: 0.9rem;
+            color: #e2e8f0;
+        }
+
+        .json-table th {
+            background: #8B5CF6; /* Purple color from dashboard */
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            padding: 15px 10px;
+            text-align: center;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Question Headers */
+        .json-table th[colspan="4"] {
+            background: #8B5CF6; /* Purple color from dashboard */
+        }
+
+        /* Base borders - removing all borders */
+        .json-table td,
+        .json-table th {
+            border: none;
+        }
+
+        /* Question Labels Row styling */
+        .json-table tr:nth-child(2) th {
+            padding: 10px;
+            background: #4c1d95; /* Darker purple */
+            color: white;
+        }
+
+        /* Total column styling */
+        .json-table td:last-child,
+        .json-table th:last-child {
+            background-color: #7c3aed; /* Slightly darker purple */
+            color: white;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+
+        .json-table td {
+            padding: 12px 10px;
+            text-align: center;
+            border: 1px solid #334155;
+            color: #e2e8f0;
+        }
+
+        /* Question Separators - adding borders with color gradient */
+        .json-table td:nth-child(4n+1):not(:first-child) {
+            border-right: 3px solid #8B5CF6; /* Purple color */
+        }
+
+        .json-table td:nth-child(4n+2) {
+            border-right: 2px solid #334155;
+        }
+
+        .json-table td:nth-child(4n+3) {
+            border-right: 2px solid #334155;
+        }
+
+        .json-table td:nth-child(4n) {
+            border-right: 2px solid #334155;
+        }
+
+        /* Question Labels (a,b,c,d) */
+        .json-table tr:first-child th:not(:first-child):not(:last-child) {
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .json-table tr:nth-child(2) th {
+            font-size: 0.8em;
+            padding: 10px;
+            background: #6d28d9; /* Slightly darker purple */
+        }
+
+        /* Even rows - update total column background */
+        .json-table tbody tr:nth-child(even) td:last-child {
+            background-color: #6d28d9; /* Slightly darker purple */
+        }
+
+        /* Hover effects - update total column hover */
+        .json-table tbody tr:hover td:last-child {
+            background-color: #5b21b6; /* Even darker purple on hover */
+            transform: scale(1.05);
+            transition: all 0.2s ease;
+        }
+
+        /* Additional styles for better visual hierarchy */
+        .json-table tbody tr td:not(:last-child) {
+            transition: all 0.2s ease;
+        }
+
+        .json-table tbody tr:hover td:not(:last-child) {
+            background-color: #334155;
+        }
+
+        /* Roll Number Column */
+        .json-table td:first-child {
+            font-weight: 600;
+            background-color: #334155;
+            border-right: 2px solid #8B5CF6;
+        }
+
+        /* Question group hover effect */
+        .json-table tbody tr:hover td:nth-child(4n+1):not(:first-child):not(:last-child),
+        .json-table tbody tr:hover td:nth-child(4n+2):not(:last-child),
+        .json-table tbody tr:hover td:nth-child(4n+3):not(:last-child),
+        .json-table tbody tr:hover td:nth-child(4n+4):not(:last-child) {
+            background-color: #334155;
+        }
+
+        .status-message {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 500;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .success {
+            background: #10b981; /* Green */
+            color: white;
+            border: 1px solid #059669;
+        }
+
+        .error {
+            background: #ef4444; /* Red */
+            color: white;
+            border: 1px solid #dc2626;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
+
+            .json-table {
+                font-size: 0.8rem;
+            }
+
+            .json-table th, .json-table td {
+                padding: 8px 5px;
+            }
+
+            .json-table td:last-child {
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Extracted Data Results</h1>
+
+        <div class="button-group">
+            <button onclick="deleteLastEntry()" class="btn btn-danger">Delete Recent Entry</button>
+            <button onclick="downloadExcel()" class="btn btn-primary">Download Excel</button>
+        </div>
+
+        <div id="statusMessage" class="status-message"></div>
+
+        <div class="table-container">
+            <table class="json-table">
+                <thead>
+                    <tr>
+                        <th>Roll Number</th>
+                        {% for q in range(1, 7) %}
+                            <th colspan="4">Question {{q}}</th>
+                        {% endfor %}
+                        <th>Total</th>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        {% for _ in range(6) %}
+                            <th>a</th>
+                            <th>b</th>
+                            <th>c</th>
+                            <th>d</th>
+                        {% endfor %}
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if json_data %}
+                        {% for entry in json_data %}
+                            <tr>
+                                <td>{{ entry.roll_number }}</td>
+                                {% for q in range(1, 7) %}
+                                    {% set q_key = 'Q' ~ q %}
+                                    {% if entry.questions and entry.questions[q_key] %}
+                                        <td>{{ entry.questions[q_key].a }}</td>
+                                        <td>{{ entry.questions[q_key].b }}</td>
+                                        <td>{{ entry.questions[q_key].c }}</td>
+                                        <td>{{ entry.questions[q_key].d }}</td>
+                                    {% else %}
+                                        <td>0</td>
+                                        <td>0</td>
+                                        <td>0</td>
+                                        <td>0</td>
+                                    {% endif %}
+                                {% endfor %}
+                                <td>{{ entry.total_marks }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="26">No data available. Please upload an image first.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function showMessage(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = `status-message ${type}`;
+            statusDiv.style.display = 'block';
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        function deleteLastEntry() {
+            fetch('/delete_last', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                    showMessage('Entry deleted successfully', 'success');
+                } else {
+                    showMessage(data.message || 'Error deleting entry', 'error');
+                }
+            })
+            .catch(error => showMessage('Error deleting entry', 'error'));
+        }
+
+        function downloadExcel() {
+            fetch('/download_excel')
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'results.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => showMessage('Error downloading Excel file', 'error'));
+        }
+    </script>
+</body>
+</html>

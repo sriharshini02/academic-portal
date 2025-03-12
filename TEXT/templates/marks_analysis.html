@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Marks Analysis</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Poppins", sans-serif;
+      }
+
+      body {
+        min-height: 100vh;
+        background: #1a1a1a;
+        color: white;
+      }
+
+      .dashboard-container {
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        min-height: 100vh;
+      }
+
+      .sidebar {
+        background: #8b5cf6;
+        color: white;
+        padding: 1.5rem;
+      }
+
+      .main-content {
+        padding: 2rem;
+        background: #1e293b;
+      }
+
+      .analysis-header {
+        margin-bottom: 2rem;
+      }
+
+      .analysis-header h1 {
+        font-size: 1.5rem;
+        color: #8b5cf6;
+        margin-bottom: 0.5rem;
+      }
+
+      .filter-controls {
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid rgba(139, 92, 246, 0.2);
+        padding: 1rem;
+        border-radius: 0.8rem;
+        margin-bottom: 2rem;
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+      }
+
+      .filter-controls select {
+        background: rgba(30, 41, 59, 0.8);
+        color: white;
+        border: 1px solid rgba(139, 92, 246, 0.2);
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        min-width: 150px;
+      }
+
+      .analyze-btn {
+        background: #8b5cf6;
+        color: white;
+        border: none;
+        padding: 0.5rem 1.5rem;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .analyze-btn:hover {
+        background: #7c3aed;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+
+      .stat-card {
+        background: rgba(30, 41, 59, 0.8);
+        padding: 1.5rem;
+        border-radius: 0.8rem;
+        border: 1px solid rgba(139, 92, 246, 0.2);
+      }
+
+      .stat-card h3 {
+        color: #8b5cf6;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .stat-card p {
+        font-size: 1.5rem;
+        font-weight: 600;
+      }
+
+      .charts-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+        margin-bottom: 2rem;
+      }
+
+      .chart-card {
+        background: rgba(30, 41, 59, 0.8);
+        padding: 1.5rem;
+        border-radius: 0.8rem;
+        border: 1px solid rgba(139, 92, 246, 0.2);
+      }
+
+      .chart-title {
+        font-size: 1.1rem;
+        color: #8b5cf6;
+        margin-bottom: 1rem;
+        font-weight: 500;
+      }
+
+      .chart-container {
+        position: relative;
+        height: 300px;
+      }
+
+      .performance-lists {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+      }
+
+      .list-card {
+        background: rgba(30, 41, 59, 0.8);
+        padding: 1.5rem;
+        border-radius: 0.8rem;
+        border: 1px solid rgba(139, 92, 246, 0.2);
+      }
+
+      .list-card h3 {
+        color: #8b5cf6;
+        margin-bottom: 1rem;
+        font-size: 1.1rem;
+      }
+
+      .student-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem;
+        border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+      }
+
+      .student-item:last-child {
+        border-bottom: none;
+      }
+
+      .student-rank {
+        color: #8b5cf6;
+        font-weight: 600;
+      }
+
+      .student-marks {
+        color: #10b981;
+      }
+
+      .class-overview {
+        margin-bottom: 2rem;
+      }
+
+      .section-title {
+        color: #8b5cf6;
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+      }
+
+      .class-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 1.5rem;
+      }
+
+      .class-card {
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid rgba(139, 92, 246, 0.2);
+        border-radius: 0.8rem;
+        padding: 1.5rem;
+      }
+
+      .class-card h3 {
+        color: #8b5cf6;
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+      }
+
+      .subject-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .subject-item {
+        background: rgba(30, 41, 59, 0.5);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        transition: all 0.3s ease;
+      }
+
+      .subject-item:hover {
+        background: rgba(30, 41, 59, 0.7);
+        transform: translateY(-2px);
+      }
+
+      .subject-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.8rem;
+      }
+
+      .subject-header h4 {
+        color: #e2e8f0;
+        font-size: 1rem;
+        font-weight: 500;
+      }
+
+      .exam-badges {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .exam-badge {
+        background: #8b5cf6;
+        color: white;
+        padding: 0.2rem 0.5rem;
+        border-radius: 0.3rem;
+        font-size: 0.8rem;
+        transition: all 0.3s ease;
+      }
+
+      .exam-badge.no-data {
+        background: #475569;
+      }
+
+      .subject-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+      }
+
+      .exam-stats {
+        border-top: 1px solid rgba(139, 92, 246, 0.1);
+        padding-top: 0.8rem;
+      }
+
+      .exam-label {
+        color: #8b5cf6;
+        font-weight: 500;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+        display: block;
+      }
+
+      .stat-values {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.8rem;
+      }
+
+      .stat-value {
+        color: #10b981;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .stat-value i {
+        color: #8b5cf6;
+        font-size: 0.9rem;
+      }
+
+      .no-data-message {
+        color: #64748b;
+        font-size: 0.9rem;
+        text-align: center;
+        padding: 1rem;
+        font-style: italic;
+      }
+
+      @media (max-width: 1200px) {
+        .stats-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      @media (max-width: 768px) {
+        .dashboard-container {
+          grid-template-columns: 1fr;
+        }
+        .charts-grid,
+        .performance-lists {
+          grid-template-columns: 1fr;
+        }
+        .filter-controls {
+          flex-direction: column;
+        }
+        .filter-controls select {
+          width: 100%;
+        }
+        .class-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .stat-values {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .exam-badges {
+          margin-top: 0.5rem;
+        }
+
+        .subject-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 0.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dashboard-container">
+      {% include 'sidebar.html' %}
+
+      <main class="main-content">
+        <div class="analysis-header">
+          <h1>Marks Analysis</h1>
+          <div class="filter-controls">
+            <div class="filter-group">
+              <label for="yearFilter">Year</label>
+              <select id="yearFilter">
+                <option value="">All Years</option>
+                {% for year in years %}
+                <option value="{{ year }}">{{ year }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label for="subjectFilter">Subject</label>
+              <select id="subjectFilter">
+                <option value="">All Subjects</option>
+                {% for subject in subjects %}
+                <option value="{{ subject }}">{{ subject }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label for="examTypeFilter">Exam Type</label>
+              <select id="examTypeFilter">
+                <option value="">All Exams</option>
+                {% for exam_type in exam_types %}
+                <option value="{{ exam_type }}">{{ exam_type }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <button class="analyze-btn" onclick="updateAnalysis()">
+              <i class="fas fa-chart-line"></i> Analyze
+            </button>
+          </div>
+        </div>
+
+        <div class="class-overview">
+          <h2 class="section-title">Class Overview</h2>
+          <div class="class-grid">
+            {% for year in years %}
+            <div class="class-card">
+              <h3>{{ year }}</h3>
+              <div class="subject-list">
+                {% for subject in subjects %}
+                <div class="subject-item">
+                  <div class="subject-header">
+                    <h4>{{ subject }}</h4>
+                    <div class="exam-badges">
+                      {% if year in class_stats and subject in class_stats[year]
+                      %} {% for exam_type in exam_types %} {% if exam_type in
+                      class_stats[year][subject] %}
+                      <span class="exam-badge">{{ exam_type }}</span>
+                      {% endif %} {% endfor %} {% else %}
+                      <span class="exam-badge no-data">No Data</span>
+                      {% endif %}
+                    </div>
+                  </div>
+                  {% if year in class_stats and subject in class_stats[year] %}
+                  <div class="subject-stats">
+                    {% for exam_type in exam_types %} {% if exam_type in
+                    class_stats[year][subject] %}
+                    <div class="exam-stats">
+                      <span class="exam-label">{{ exam_type }}</span>
+                      <div class="stat-values">
+                        <span class="stat-value">
+                          <i class="fas fa-users"></i>
+                          {{
+                          class_stats[year][subject][exam_type]['total_students']
+                          }} students
+                        </span>
+                        <span class="stat-value">
+                          <i class="fas fa-chart-line"></i>
+                          Avg: {{
+                          class_stats[year][subject][exam_type]['avg_marks'] }}%
+                        </span>
+                        <span class="stat-value">
+                          <i class="fas fa-trophy"></i>
+                          Max: {{
+                          class_stats[year][subject][exam_type]['max_marks'] }}
+                        </span>
+                        <span class="stat-value">
+                          <i class="fas fa-check-circle"></i>
+                          Pass: {{
+                          class_stats[year][subject][exam_type]['pass_percentage']
+                          }}%
+                        </span>
+                      </div>
+                    </div>
+                    {% endif %} {% endfor %}
+                  </div>
+                  {% else %}
+                  <div class="no-data-message">
+                    No exam data available for this class and subject
+                  </div>
+                  {% endif %}
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h3>Total Students</h3>
+            <p id="totalStudents">0</p>
+          </div>
+          <div class="stat-card">
+            <h3>Average Marks</h3>
+            <p id="averageMarks">0.00</p>
+          </div>
+          <div class="stat-card">
+            <h3>Highest Marks</h3>
+            <p id="highestMarks">0</p>
+          </div>
+          <div class="stat-card">
+            <h3>Pass Percentage</h3>
+            <p id="passPercentage">0%</p>
+          </div>
+        </div>
+
+        <div class="charts-grid">
+          <div class="chart-card">
+            <h3 class="chart-title">Pass/Fail Distribution</h3>
+            <div class="chart-container">
+              <canvas id="passFailChart"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <h3 class="chart-title">Score Distribution</h3>
+            <div class="chart-container">
+              <canvas id="scoreDistChart"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <h3 class="chart-title">Question-wise Performance</h3>
+            <div class="chart-container">
+              <canvas id="questionAnalysisChart"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <h3 class="chart-title">Performance Trend</h3>
+            <div class="chart-container">
+              <canvas id="performanceTrendChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="performance-lists">
+          <div class="list-card">
+            <h3>Top Performers</h3>
+            <div id="topPerformersList"></div>
+          </div>
+
+          <div class="list-card">
+            <h3>Needs Improvement</h3>
+            <div id="needsImprovementList"></div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      let charts = {};
+
+      function initializeCharts() {
+        // Initialize Pass/Fail Chart
+        charts.passFailChart = new Chart(
+          document.getElementById("passFailChart"),
+          {
+            type: "doughnut",
+            data: {
+              labels: ["Pass", "Fail"],
+              datasets: [
+                {
+                  data: [0, 0],
+                  backgroundColor: ["#10B981", "#EF4444"],
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: "bottom",
+                  labels: { color: "#e2e8f0" },
+                },
+              },
+            },
+          }
+        );
+
+        // Initialize Score Distribution Chart
+        charts.scoreDistChart = new Chart(
+          document.getElementById("scoreDistChart"),
+          {
+            type: "bar",
+            data: {
+              labels: ["0-8", "9-16", "17-24", "25-32", "33-40"],
+              datasets: [
+                {
+                  label: "Number of Students",
+                  data: [0, 0, 0, 0, 0],
+                  backgroundColor: "#8B5CF6",
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  grid: { color: "rgba(255, 255, 255, 0.1)" },
+                  ticks: { color: "#e2e8f0" },
+                },
+                x: {
+                  grid: { color: "rgba(255, 255, 255, 0.1)" },
+                  ticks: { color: "#e2e8f0" },
+                },
+              },
+            },
+          }
+        );
+
+        // Initialize Question Analysis Chart
+        charts.questionAnalysisChart = new Chart(
+          document.getElementById("questionAnalysisChart"),
+          {
+            type: "bar",
+            data: {
+              labels: ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6"],
+              datasets: [
+                {
+                  label: "Part A",
+                  data: [0, 0, 0, 0, 0, 0],
+                  backgroundColor: "#8B5CF6",
+                },
+                {
+                  label: "Part B",
+                  data: [0, 0, 0, 0, 0, 0],
+                  backgroundColor: "#EC4899",
+                },
+                {
+                  label: "Part C",
+                  data: [0, 0, 0, 0, 0, 0],
+                  backgroundColor: "#10B981",
+                },
+                {
+                  label: "Part D",
+                  data: [0, 0, 0, 0, 0, 0],
+                  backgroundColor: "#F59E0B",
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  grid: { color: "rgba(255, 255, 255, 0.1)" },
+                  ticks: { color: "#e2e8f0" },
+                },
+                x: {
+                  grid: { color: "rgba(255, 255, 255, 0.1)" },
+                  ticks: { color: "#e2e8f0" },
+                },
+              },
+              plugins: {
+                legend: {
+                  position: "bottom",
+                  labels: { color: "#e2e8f0" },
+                },
+              },
+            },
+          }
+        );
+      }
+
+      function updateAnalysis() {
+        const year = document.getElementById("yearFilter").value;
+        const subject = document.getElementById("subjectFilter").value;
+        const examType = document.getElementById("examTypeFilter").value;
+
+        if (!year || !subject || !examType) {
+          alert("Please select all filters");
+          return;
+        }
+
+        fetch(
+          `/api/analysis?year=${year}&subject=${subject}&examType=${examType}`
+        )
+          .then((response) => response.json())
+          .then((data) => {
+            updateStats(data.overall_stats);
+            updateCharts(data);
+            updateLists(data);
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Error fetching analysis data");
+          });
+      }
+
+      function updateStats(stats) {
+        document.getElementById("totalStudents").textContent =
+          stats.total_students;
+        document.getElementById("averageMarks").textContent =
+          stats.average_marks.toFixed(2);
+        document.getElementById("highestMarks").textContent =
+          stats.highest_marks;
+        document.getElementById("passPercentage").textContent =
+          stats.pass_percentage + "%";
+      }
+
+      function updateCharts(data) {
+        // Update Pass/Fail Chart
+        const passCount = Math.round(
+          (data.overall_stats.total_students *
+            data.overall_stats.pass_percentage) /
+            100
+        );
+        const failCount = data.overall_stats.total_students - passCount;
+        charts.passFailChart.data.datasets[0].data = [passCount, failCount];
+        charts.passFailChart.update();
+
+        // Update Score Distribution Chart
+        charts.scoreDistChart.data.datasets[0].data = Object.values(
+          data.student_distribution
+        );
+        charts.scoreDistChart.update();
+
+        // Update Question Analysis Chart
+        const questionData = Object.values(data.question_stats);
+        charts.questionAnalysisChart.data.datasets.forEach((dataset, index) => {
+          const part = ["a", "b", "c", "d"][index];
+          dataset.data = questionData.map((q) => q.average_marks[part]);
+        });
+        charts.questionAnalysisChart.update();
+      }
+
+      function updateLists(data) {
+        // Update Top Performers List
+        const topPerformersHtml = data.top_performers
+          .map(
+            (student, index) => `
+                <div class="student-item">
+                    <span><span class="student-rank">#${index + 1}</span> ${
+              student.roll_number
+            }</span>
+                    <span class="student-marks">${student.marks}%</span>
+                </div>
+            `
+          )
+          .join("");
+        document.getElementById("topPerformersList").innerHTML =
+          topPerformersHtml;
+
+        // Update Needs Improvement List
+        const needsImprovementHtml = data.needs_improvement
+          .map(
+            (student, index) => `
+                <div class="student-item">
+                    <span><span class="student-rank">#${index + 1}</span> ${
+              student.roll_number
+            }</span>
+                    <span class="student-marks">${student.marks}%</span>
+                </div>
+            `
+          )
+          .join("");
+        document.getElementById("needsImprovementList").innerHTML =
+          needsImprovementHtml;
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        initializeCharts();
+      });
+    </script>
+  </body>
+</html>

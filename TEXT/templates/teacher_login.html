@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #1a1a1a;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            overflow: hidden;
+        }
+
+        .login-section {
+            background: #1a1a1a;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+        }
+
+        .illustration-section {
+            background: #8B5CF6;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .illustration-content {
+            text-align: center;
+            max-width: 400px;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .teacher-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            animation: float 3s ease-in-out infinite;
+            text-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .illustration-content h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            color: white;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .illustration-content p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 1rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .teacher-image {
+            width: 300px;
+            height: 300px;
+            margin-bottom: 2rem;
+            animation: float 3s ease-in-out infinite;
+            filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.3));
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .login-container {
+            max-width: 280px;
+            width: 100%;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .login-header {
+            margin-bottom: 2rem;
+        }
+
+        .login-header h2 {
+            color: #8B5CF6;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.4rem;
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.7rem;
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 6px;
+            color: white;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #8B5CF6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.3);
+            background: rgba(139, 92, 246, 0.15);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 0.7rem;
+            background: #8B5CF6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+            margin-top: 0.5rem;
+        }
+
+        .submit-btn:hover {
+            background: #7c3aed;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
+        }
+
+        .links {
+            margin-top: 1.25rem;
+            text-align: center;
+            color: #fff;
+            font-size: 0.85rem;
+        }
+
+        .links a {
+            color: #8B5CF6;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .links a:hover {
+            color: #7c3aed;
+        }
+
+        .decoration-circle {
+            position: absolute;
+            background: #8B5CF6;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.1;
+            z-index: 0;
+        }
+
+        .circle-1 {
+            width: 300px;
+            height: 300px;
+            top: -150px;
+            right: -150px;
+        }
+
+        .circle-2 {
+            width: 200px;
+            height: 200px;
+            bottom: -100px;
+            left: -100px;
+        }
+
+        .error-message {
+            color: #ef4444;
+            margin-bottom: 1rem;
+            text-align: center;
+            font-size: 0.9rem;
+            background: rgba(239, 68, 68, 0.1);
+            padding: 0.75rem;
+            border-radius: 6px;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                grid-template-columns: 1fr;
+            }
+
+            .illustration-section {
+                display: none;
+            }
+
+            .login-section {
+                padding: 2rem;
+                border-right: none;
+            }
+        }
+        body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+}
+
+.login-section,
+.register-section {
+    padding: 1rem;  /* Reduced from 1.5rem */
+}
+
+.form-row {
+    gap: 0.8rem;  /* Reduced from 1rem */
+    margin-bottom: 1rem;  /* Reduced from 1.5rem */
+}
+
+.alert {
+    padding: 0.8rem;  /* Reduced from 12px */
+    margin-bottom: 1rem;  /* Reduced from 20px */
+    font-size: 0.85rem;
+}
+    </style>
+</head>
+<body>
+    <div class="login-section">
+        <div class="login-container">
+            <div class="login-header">
+                <h2>Teacher Login</h2>
+            </div>
+
+            {% if msg %}
+            <div class="error-message">{{ msg }}</div>
+            {% endif %}
+
+            <form id="teacherLoginForm" class="login-form" method="POST">
+                <div class="form-group">
+                    <label for="teacherId">Teacher ID</label>
+                    <input type="text" id="teacherId" name="teacherId" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+
+                <button type="submit" class="submit-btn">Login</button>
+
+                <div class="links">
+                    <p>Don't have an account? <a href="/teacher/register">Register here</a></p>
+                </div>
+            </form>
+        </div>
+        <div class="decoration-circle circle-2"></div>
+    </div>
+
+    <div class="illustration-section">
+        <div class="illustration-content">
+            <div class="teacher-icon" style="font-size: 8rem; margin-bottom: 2rem; animation: float 3s ease-in-out infinite;">👨‍🏫</div>
+            <h1>Welcome Back!</h1>
+            <p>Manage your classes, grade assignments, and track student performance efficiently.</p>
+        </div>
+        <div class="decoration-circle circle-1"></div>
+    </div>
+
+    <script>
+    document.getElementById('teacherLoginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const teacherId = document.getElementById('teacherId').value;
+        const password = document.getElementById('password').value;
+        
+        try {
+            const response = await fetch('/teacher/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ teacherId, password })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                // Show success message
+                showMessage(data.message, 'success');
+                // Redirect to dashboard after successful login
+                setTimeout(() => {
+                    window.location.href = '/teacher/dashboard';
+                }, 1000);
+            } else {
+                // Show error message
+                showMessage(data.message, 'error');
+            }
+        } catch (error) {
+            showMessage('An error occurred during login', 'error');
+        }
+    });
+
+    function showMessage(message, type) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `alert alert-${type}`;
+        messageDiv.textContent = message;
+        
+        // Remove any existing alerts
+        const existingAlerts = document.querySelectorAll('.alert');
+        existingAlerts.forEach(alert => alert.remove());
+        
+        // Insert the message at the top of the form
+        const form = document.querySelector('.login-container');
+        form.insertBefore(messageDiv, form.firstChild);
+        
+        // Auto-dismiss success messages after 3 seconds
+        if (type === 'success') {
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 3000);
+        }
+    }
+    </script>
+</body>
+</html> 

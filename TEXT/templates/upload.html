@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Upload Answer Sheets</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Poppins", sans-serif;
+      }
+
+      body {
+        min-height: 100vh;
+        background: #1a1a1a;
+        color: white;
+      }
+
+      .dashboard-container {
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        min-height: 100vh;
+      }
+
+      .main-content {
+        padding: 2rem;
+        background: #1e293b;
+        position: relative;
+      }
+
+      .container {
+        width: 100%;
+        background: rgba(30, 41, 59, 0.8);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(139, 92, 246, 0.2);
+        padding: 30px;
+        border-radius: 20px;
+        position: relative;
+        z-index: 1;
+        animation: fadeInUp 1s ease-out;
+      }
+
+      h1 {
+        text-align: center;
+        margin-bottom: 20px;
+        font-size: 1.5rem;
+        color: #8b5cf6; /* Purple color from dashboard */
+        font-weight: 700;
+      }
+
+      .form-group {
+        margin-bottom: 15px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
+        color: #8b5cf6; /* Purple color from dashboard */
+      }
+
+      .form-group select,
+      .form-group input {
+        width: 100%;
+        padding: 10px;
+        background: rgba(30, 41, 59, 0.5);
+        border: 1px solid rgba(139, 92, 246, 0.2);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        color: white;
+      }
+
+      .folder-upload-container {
+        background: rgba(30, 41, 59, 0.5);
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid rgba(139, 92, 246, 0.2);
+        text-align: center;
+        margin-bottom: 15px;
+      }
+
+      .custom-file-upload {
+        background: #8b5cf6; /* Purple color from dashboard */
+        color: white;
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: inline-block;
+        font-weight: 500;
+        transition: all 0.3s ease;
+      }
+
+      .custom-file-upload:hover {
+        background: #7c3aed; /* Slightly darker purple */
+        transform: translateY(-2px);
+      }
+
+      .upload-instructions {
+        margin-top: 10px;
+        font-size: 0.8em;
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      .selected-files {
+        margin-top: 10px;
+        padding: 8px;
+        background: rgba(30, 41, 59, 0.5);
+        border-radius: 8px;
+        max-height: 80px;
+        overflow-y: auto;
+        font-size: 0.8em;
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      button {
+        width: 100%;
+        padding: 12px;
+        background: #8b5cf6; /* Purple color from dashboard */
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 10px;
+      }
+
+      button:hover {
+        background: #7c3aed; /* Slightly darker purple */
+        transform: translateY(-2px);
+      }
+
+      button:disabled {
+        background: rgba(139, 92, 246, 0.5);
+        cursor: not-allowed;
+      }
+
+      input[type="file"] {
+        display: none;
+      }
+
+      .decoration-circle {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(100px);
+        z-index: 0;
+      }
+
+      .circle-1 {
+        width: 600px;
+        height: 600px;
+        background: rgba(139, 92, 246, 0.15);
+        top: -300px;
+        right: -150px;
+      }
+
+      .circle-2 {
+        width: 400px;
+        height: 400px;
+        background: rgba(139, 92, 246, 0.15);
+        bottom: -200px;
+        left: -100px;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (max-width: 480px) {
+        .container {
+          padding: 20px;
+        }
+        h1 {
+          font-size: 1.2rem;
+        }
+      }
+
+      .loading {
+        opacity: 0.7;
+        pointer-events: none;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .fa-spinner {
+        animation: spin 1s linear infinite;
+      }
+
+      /* Add loading overlay */
+      .upload-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
+
+      .upload-overlay.active {
+        display: flex;
+      }
+
+      .upload-progress {
+        background: #1e293b;
+        padding: 2rem;
+        border-radius: 1rem;
+        text-align: center;
+        color: white;
+      }
+
+      .upload-options {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin: 2rem 0;
+      }
+
+      .upload-option {
+        background: rgba(30, 41, 59, 0.5);
+        padding: 1.5rem;
+        border-radius: 1rem;
+        border: 1px solid rgba(139, 92, 246, 0.2);
+      }
+
+      .upload-option h3 {
+        color: #8b5cf6;
+        margin-bottom: 1rem;
+        font-size: 1.1rem;
+        text-align: center;
+      }
+
+      .upload-area {
+        border: 2px dashed rgba(139, 92, 246, 0.3);
+        border-radius: 0.5rem;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .upload-area:hover {
+        border-color: #8b5cf6;
+        background: rgba(139, 92, 246, 0.1);
+      }
+
+      .upload-area i {
+        font-size: 2rem;
+        color: #8b5cf6;
+        margin-bottom: 1rem;
+      }
+
+      .file-list {
+        margin-top: 1rem;
+        padding: 0.5rem;
+        background: rgba(30, 41, 59, 0.3);
+        border-radius: 0.5rem;
+        max-height: 150px;
+        overflow-y: auto;
+        font-size: 0.9rem;
+      }
+
+      @media (max-width: 768px) {
+        .upload-options {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .file-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0;
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      .file-item i {
+        color: #8b5cf6;
+      }
+
+      .file-count {
+        color: #8b5cf6;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+      }
+
+      .no-files {
+        color: rgba(255, 255, 255, 0.5);
+        font-style: italic;
+        text-align: center;
+      }
+
+      .upload-area small {
+        display: block;
+        margin-top: 0.5rem;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.8rem;
+      }
+
+      .form-actions {
+        margin-top: 2rem;
+        text-align: center;
+      }
+
+      .submit-btn {
+        background: #8b5cf6;
+        color: white;
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-width: 200px;
+        justify-content: center;
+      }
+
+      .submit-btn:hover {
+        background: #7c3aed;
+        transform: translateY(-2px);
+      }
+
+      .submit-btn:disabled {
+        background: rgba(139, 92, 246, 0.5);
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .submit-btn i {
+        font-size: 1.2rem;
+      }
+
+      .upload-progress {
+        margin-top: 1rem;
+        color: #8b5cf6;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+
+      /* Add styles for file validation */
+      .file-item.invalid {
+        color: #ef4444;
+      }
+
+      .file-item.valid {
+        color: #10b981;
+      }
+
+      .validation-message {
+        margin-top: 1rem;
+        padding: 0.75rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        display: none;
+      }
+
+      .validation-message.error {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+      }
+
+      .validation-message.success {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+      }
+
+      /* Improve the file list appearance */
+      .file-list {
+        margin-top: 1rem;
+        background: rgba(30, 41, 59, 0.3);
+        border-radius: 8px;
+        padding: 0.75rem;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+
+      .file-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+      }
+
+      .file-item:hover {
+        background: rgba(139, 92, 246, 0.1);
+      }
+
+      .file-item i {
+        min-width: 20px;
+      }
+
+      /* Add loading animation */
+      @keyframes pulse {
+        0% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+
+      .processing {
+        animation: pulse 1.5s infinite;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dashboard-container">
+      {% include 'sidebar.html' %}
+
+      <main class="main-content">
+        <div class="container">
+          <h1>Upload Answer Sheets</h1>
+          <form
+            id="uploadForm"
+            action="{{ url_for('upload_folder') }}"
+            method="POST"
+            enctype="multipart/form-data"
+          >
+            <div class="form-group">
+              <label for="class">Class</label>
+              <select id="class" name="class" required>
+                <option value="">Select Class</option>
+                <option value="FY">First Year</option>
+                <option value="SY">Second Year</option>
+                <option value="TY">Third Year</option>
+                <option value="Final">Final Year</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="subject">Subject</label>
+              <select id="subject" name="subject" required>
+                <option value="">Select Subject</option>
+                <option value="java">Java</option>
+                <option value="python">Python</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="examType">Exam Type</label>
+              <select id="examType" name="examType" required>
+                <option value="">Select Exam Type</option>
+                <option value="MID1">Mid Term 1</option>
+                <option value="MID2">Mid Term 2</option>
+              </select>
+            </div>
+            <div class="upload-options">
+              <div class="upload-option">
+                <h3>Upload Folder</h3>
+                <input
+                  type="file"
+                  id="folderUpload"
+                  name="folder[]"
+                  webkitdirectory
+                  mozdirectory
+                  directory
+                  multiple
+                  accept="image/*"
+                  style="display: none"
+                />
+                <div class="upload-area" id="folderDropZone">
+                  <i class="fas fa-folder-plus"></i>
+                  <p>Click to select folder</p>
+                  <small>(Only image files will be processed)</small>
+                </div>
+                <div id="folderFileList" class="file-list"></div>
+              </div>
+
+              <div class="upload-option">
+                <h3>Upload Individual Files</h3>
+                <input
+                  type="file"
+                  id="fileUpload"
+                  name="files[]"
+                  multiple
+                  accept="image/*"
+                  style="display: none"
+                />
+                <div class="upload-area" id="fileDropZone">
+                  <i class="fas fa-images"></i>
+                  <p>Drop image files here or click to browse</p>
+                </div>
+                <div id="fileList" class="file-list"></div>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="submit-btn" id="submitBtn">
+                <i class="fas fa-upload"></i> Process Images
+              </button>
+              <div
+                class="upload-progress"
+                id="uploadProgress"
+                style="display: none"
+              >
+                <i class="fas fa-spinner fa-spin"></i>
+                <span id="progressText">Processing images...</span>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="decoration-circle circle-1"></div>
+        <div class="decoration-circle circle-2"></div>
+      </main>
+    </div>
+
+    <script>
+      const folderUpload = document.getElementById("folderUpload");
+      const fileUpload = document.getElementById("fileUpload");
+      const folderDropZone = document.getElementById("folderDropZone");
+      const fileDropZone = document.getElementById("fileDropZone");
+      const folderFileList = document.getElementById("folderFileList");
+      const fileList = document.getElementById("fileList");
+      const uploadForm = document.getElementById("uploadForm");
+      const submitBtn = document.getElementById("submitBtn");
+      const uploadProgress = document.getElementById("uploadProgress");
+      const progressText = document.getElementById("progressText");
+
+      // Folder upload handling
+      folderDropZone.addEventListener("click", () => folderUpload.click());
+
+      folderUpload.addEventListener("change", function () {
+        const files = Array.from(this.files).filter((file) =>
+          file.type.startsWith("image/")
+        );
+
+        folderFileList.innerHTML =
+          files.length > 0
+            ? `<div class="file-count">Selected ${files.length} image(s):</div>` +
+              files
+                .map(
+                  (file) => `<div class="file-item">
+              <i class="fas fa-image"></i>
+              ${file.webkitRelativePath || file.name}
+            </div>`
+                )
+                .join("")
+            : '<div class="no-files">No image files selected</div>';
+      });
+
+      // Individual file upload handling
+      fileDropZone.addEventListener("click", () => fileUpload.click());
+      fileDropZone.addEventListener("dragover", handleDragOver);
+      fileDropZone.addEventListener("dragleave", handleDragLeave);
+      fileDropZone.addEventListener("drop", handleDrop);
+
+      function handleDragOver(e) {
+        e.preventDefault();
+        this.style.borderColor = "#8B5CF6";
+        this.style.background = "rgba(139, 92, 246, 0.1)";
+      }
+
+      function handleDragLeave(e) {
+        e.preventDefault();
+        this.style.borderColor = "rgba(139, 92, 246, 0.3)";
+        this.style.background = "transparent";
+      }
+
+      function handleDrop(e) {
+        e.preventDefault();
+        this.style.borderColor = "rgba(139, 92, 246, 0.3)";
+        this.style.background = "transparent";
+
+        const files = Array.from(e.dataTransfer.files).filter((file) =>
+          file.type.startsWith("image/")
+        );
+
+        // Create a new DataTransfer object
+        const dataTransfer = new DataTransfer();
+        files.forEach((file) => dataTransfer.items.add(file));
+        fileUpload.files = dataTransfer.files;
+
+        updateFileList(files);
+      }
+
+      function updateFileList(files) {
+        fileList.innerHTML =
+          files.length > 0
+            ? `<div class="file-count">Selected ${files.length} image(s):</div>` +
+              files
+                .map(
+                  (file) => `<div class="file-item">
+              <i class="fas fa-image"></i>
+              ${file.name}
+            </div>`
+                )
+                .join("")
+            : '<div class="no-files">No image files selected</div>';
+      }
+
+      fileUpload.addEventListener("change", function () {
+        const files = Array.from(this.files).filter((file) =>
+          file.type.startsWith("image/")
+        );
+        updateFileList(files);
+      });
+
+      // Add form validation and submission handling
+      function validateForm() {
+        const classValue = document.getElementById("class").value;
+        const subjectValue = document.getElementById("subject").value;
+        const examTypeValue = document.getElementById("examType").value;
+        const hasFiles =
+          folderUpload.files.length > 0 || fileUpload.files.length > 0;
+
+        submitBtn.disabled = !(
+          classValue &&
+          subjectValue &&
+          examTypeValue &&
+          hasFiles
+        );
+      }
+
+      // Add validation listeners
+      document.getElementById("class").addEventListener("change", validateForm);
+      document
+        .getElementById("subject")
+        .addEventListener("change", validateForm);
+      document
+        .getElementById("examType")
+        .addEventListener("change", validateForm);
+      folderUpload.addEventListener("change", () => {
+        updateFileList(folderUpload);
+        validateForm();
+      });
+      fileUpload.addEventListener("change", () => {
+        updateFileList(fileUpload);
+        validateForm();
+      });
+
+      // Handle form submission
+      uploadForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML =
+          '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        uploadProgress.style.display = "flex";
+
+        try {
+          const formData = new FormData(uploadForm);
+
+          const response = await fetch(uploadForm.action, {
+            method: "POST",
+            body: formData,
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            progressText.textContent = "Processing complete! Redirecting...";
+            setTimeout(() => {
+              window.location.href = result.redirect;
+            }, 1000);
+          } else {
+            throw new Error(result.message || "Upload failed");
+          }
+        } catch (error) {
+          console.error("Upload error:", error);
+          progressText.textContent = `Error: ${error.message}`;
+          progressText.style.color = "#ef4444";
+
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-upload"></i> Try Again';
+        }
+      });
+
+      // Initialize form validation
+      validateForm();
+    </script>
+  </body>
+</html>
