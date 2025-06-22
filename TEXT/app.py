@@ -28,12 +28,6 @@ import json
 from PIL import Image
 from datetime import datetime
 import re
-import shutil
-from zipfile import ZipFile
-import tempfile
-import openpyxl
-import time
-import threading
 import sqlite3
 
 app = Flask(__name__)
@@ -266,29 +260,30 @@ def student_dashboard():
 
     # Get student details from session
     student_id = session.get("user_id")
-    
+
     # Debug print to check what's in the session
     print(f"Session data for student: {session}")
-    
+
     # Connect to the database to get complete student information
     conn = sqlite3.connect("./database/education.db")
     cursor = conn.cursor()
-    
+
     try:
         # Query the students table to get complete information
         cursor.execute(
-            "SELECT id, full_name, department FROM students WHERE id = ?", 
-            (student_id,)
+            "SELECT id, full_name, department FROM students WHERE id = ?", (student_id,)
         )
         student_data = cursor.fetchone()
-        
+
         if student_data:
             # Create student info dictionary with database data
             student = {
                 "roll_number": student_data[0],
                 "name": student_data[1],
                 "department": student_data[2],
-                "class_year": session.get("class_year", "2023-2024")  # Default academic year if not in session
+                "class_year": session.get(
+                    "class_year", "2023-2024"
+                ),  # Default academic year if not in session
             }
             print(f"Found student in database: {student}")
         else:
@@ -296,8 +291,10 @@ def student_dashboard():
             student = {
                 "roll_number": student_id,
                 "name": session.get("full_name", "Student"),
-                "department": session.get("department", "Computer Science"),  # Provide default values
-                "class_year": session.get("class_year", "2023-2024")
+                "department": session.get(
+                    "department", "Computer Science"
+                ),  # Provide default values
+                "class_year": session.get("class_year", "2023-2024"),
             }
             print(f"Using session data for student: {student}")
     except Exception as e:
@@ -307,28 +304,36 @@ def student_dashboard():
             "roll_number": student_id,
             "name": session.get("full_name", "Student"),
             "department": "Computer Science",  # Default department
-            "class_year": "2023-2024"  # Default academic year
+            "class_year": "2023-2024",  # Default academic year
         }
     finally:
         conn.close()
-    
+
     # Get student's marks and analysis from ResultsDatabase
     try:
         # Make sure we have a valid roll number
         if not student_id:
             flash("Student ID not found in session", "error")
             return redirect(url_for("index"))
-            
+
         print(f"Fetching results for student ID: {student_id}")
         student_results = db_results.get_student_results(student_id)
-        
+
         if student_results:
-            print(f"Found results for student: {len(student_results.get('results', []))} records")
-            
+            print(
+                f"Found results for student: {len(student_results.get('results', []))} records"
+            )
+
             # Ensure highest mark is properly set
-            if student_results["overall_stats"]["highest_mark"] == 0 and student_results["results"]:
+            if (
+                student_results["overall_stats"]["highest_mark"] == 0
+                and student_results["results"]
+            ):
                 # Calculate highest mark manually
-                highest_mark = max(float(result["total_marks"]) for result in student_results["results"])
+                highest_mark = max(
+                    float(result["total_marks"])
+                    for result in student_results["results"]
+                )
                 student_results["overall_stats"]["highest_mark"] = highest_mark
                 print(f"Manually set highest mark to: {highest_mark}")
         else:
@@ -341,12 +346,13 @@ def student_dashboard():
                     "total_exams": 0,
                     "overall_average": 0,
                     "highest_mark": 0,
-                    "lowest_mark": 0
-                }
+                    "lowest_mark": 0,
+                },
             }
     except Exception as e:
         print(f"Error retrieving student results: {e}")
         import traceback
+
         traceback.print_exc()
         # Initialize with empty data
         student_results = {
@@ -356,23 +362,23 @@ def student_dashboard():
                 "total_exams": 0,
                 "overall_average": 0,
                 "highest_mark": 0,
-                "lowest_mark": 0
-            }
+                "lowest_mark": 0,
+            },
         }
-    
+
     # Print debug info
     print(f"Student data being sent to template: {student}")
     print(f"Overall stats: {student_results.get('overall_stats', {})}")
-    if student_results.get('results'):
+    if student_results.get("results"):
         print(f"First result: {student_results['results'][0]}")
-    
+
     return render_template(
-        "student_dashboard.html", 
+        "student_dashboard.html",
         name=student["name"],
         student=student,
         results=student_results["results"],
         subject_performance=student_results["subject_performance"],
-        overall_stats=student_results["overall_stats"]
+        overall_stats=student_results["overall_stats"],
     )
 
 
@@ -945,28 +951,24 @@ def view_marks():
     if session.get("user_type") != "teacher":
         flash("Unauthorized access", "error")
         return redirect(url_for("index"))
-    
+
     # Get available class years and exam types
     try:
         conn = sqlite3.connect("./database/exam_results.db")
         cursor = conn.cursor()
-        
+
         # Get distinct class years
         cursor.execute("SELECT DISTINCT class_year FROM students_results")
         years = [row[0] for row in cursor.fetchall()]
-        
+
         # Get distinct exam types
         cursor.execute("SELECT DISTINCT exam_type FROM students_results")
         exam_types = [row[0] for row in cursor.fetchall()]
-        
+
         conn.close()
-        
-        return render_template(
-            "view_marks.html",
-            years=years,
-            exam_types=exam_types
-        )
-        
+
+        return render_template("view_marks.html", years=years, exam_types=exam_types)
+
     except Exception as e:
         print(f"Error loading view marks page: {str(e)}")
         flash(f"Error: {str(e)}", "error")
@@ -978,20 +980,20 @@ def view_marks():
 def api_view_marks():
     if session.get("user_type") != "teacher":
         return jsonify({"error": "Unauthorized access"}), 403
-    
+
     # Get query parameters
     class_year = request.args.get("year")
     subject = request.args.get("subject")
     exam_type = request.args.get("examType")
-    
+
     if not all([class_year, subject, exam_type]):
         return jsonify({"error": "Missing required parameters"}), 400
-    
+
     try:
         # Connect to the database
         conn = sqlite3.connect("./database/exam_results.db")
         cursor = conn.cursor()
-        
+
         # Get all results matching the criteria
         cursor.execute(
             """
@@ -1000,13 +1002,13 @@ def api_view_marks():
             WHERE sr.class_year = ? AND sr.subject = ? AND sr.exam_type = ?
             ORDER BY sr.roll_number
             """,
-            (class_year, subject, exam_type)
+            (class_year, subject, exam_type),
         )
-        
+
         results = []
         for row in cursor.fetchall():
             result_id, roll_number, subject_name, total_marks = row
-            
+
             # Get question marks for this result
             cursor.execute(
                 """
@@ -1015,9 +1017,9 @@ def api_view_marks():
                 WHERE result_id = ?
                 ORDER BY question_number
                 """,
-                (result_id,)
+                (result_id,),
             )
-            
+
             questions = {}
             for q_row in cursor.fetchall():
                 q_num, part_a, part_b, part_c, part_d = q_row
@@ -1025,24 +1027,26 @@ def api_view_marks():
                     "a": part_a,
                     "b": part_b,
                     "c": part_c,
-                    "d": part_d
+                    "d": part_d,
                 }
-            
+
             # Fill in missing questions with zeros
             for i in range(1, 7):
                 if f"Q{i}" not in questions:
                     questions[f"Q{i}"] = {"a": 0, "b": 0, "c": 0, "d": 0}
-            
-            results.append({
-                "roll_number": roll_number,
-                "subject": subject_name,
-                "total_marks": total_marks,
-                "questions": questions
-            })
-        
+
+            results.append(
+                {
+                    "roll_number": roll_number,
+                    "subject": subject_name,
+                    "total_marks": total_marks,
+                    "questions": questions,
+                }
+            )
+
         conn.close()
         return jsonify(results)
-        
+
     except Exception as e:
         print(f"Error fetching marks: {str(e)}")
         return jsonify({"error": str(e)}), 500
@@ -1053,15 +1057,25 @@ def api_view_marks():
 def api_update_marks():
     if session.get("user_type") != "teacher":
         return jsonify({"success": False, "message": "Unauthorized access"}), 403
-    
+
     try:
         data = request.json
-        
+
         # Validate required fields
-        required_fields = ["roll_number", "class_year", "subject", "exam_type", "questions", "total_marks"]
+        required_fields = [
+            "roll_number",
+            "class_year",
+            "subject",
+            "exam_type",
+            "questions",
+            "total_marks",
+        ]
         if not all(field in data for field in required_fields):
-            return jsonify({"success": False, "message": "Missing required fields"}), 400
-        
+            return (
+                jsonify({"success": False, "message": "Missing required fields"}),
+                400,
+            )
+
         # Update the marks in the database
         success, message = db_results.update_result(
             data["roll_number"],
@@ -1069,11 +1083,11 @@ def api_update_marks():
             data["subject"],
             data["exam_type"],
             data["questions"],
-            data["total_marks"]
+            data["total_marks"],
         )
-        
+
         return jsonify({"success": success, "message": message})
-        
+
     except Exception as e:
         print(f"Error updating marks: {str(e)}")
         return jsonify({"success": False, "message": str(e)}), 500
@@ -1084,25 +1098,25 @@ def api_update_marks():
 def api_delete_marks():
     if session.get("user_type") != "teacher":
         return jsonify({"success": False, "message": "Unauthorized access"}), 403
-    
+
     try:
         data = request.json
-        
+
         # Validate required fields
         required_fields = ["roll_number", "class_year", "subject", "exam_type"]
         if not all(field in data for field in required_fields):
-            return jsonify({"success": False, "message": "Missing required fields"}), 400
-        
+            return (
+                jsonify({"success": False, "message": "Missing required fields"}),
+                400,
+            )
+
         # Delete the result from the database
         success, message = db_results.delete_result(
-            data["roll_number"],
-            data["class_year"],
-            data["subject"],
-            data["exam_type"]
+            data["roll_number"], data["class_year"], data["subject"], data["exam_type"]
         )
-        
+
         return jsonify({"success": success, "message": message})
-        
+
     except Exception as e:
         print(f"Error deleting marks: {str(e)}")
         return jsonify({"success": False, "message": str(e)}), 500
@@ -1113,36 +1127,36 @@ def api_delete_marks():
 def api_download_marks():
     if session.get("user_type") != "teacher":
         return jsonify({"error": "Unauthorized access"}), 403
-    
+
     # Get query parameters
     class_year = request.args.get("year")
     subject = request.args.get("subject")
     exam_type = request.args.get("examType")
-    
+
     if not all([class_year, subject, exam_type]):
         return jsonify({"error": "Missing required parameters"}), 400
-    
+
     try:
         # Get marks data
         response = api_view_marks()
         if isinstance(response, tuple):
             return response
-        
+
         marks_data = response.json
-        
+
         # Create Excel file
         import pandas as pd
         from io import BytesIO
-        
+
         # Prepare data for Excel
         excel_data = []
         for entry in marks_data:
             row = {
                 "Roll Number": entry["roll_number"],
                 "Subject": entry["subject"],
-                "Total Marks": entry["total_marks"]
+                "Total Marks": entry["total_marks"],
             }
-            
+
             # Add question marks
             for q_num in range(1, 7):
                 q_key = f"Q{q_num}"
@@ -1157,27 +1171,27 @@ def api_download_marks():
                     row[f"{q_key}_b"] = 0
                     row[f"{q_key}_c"] = 0
                     row[f"{q_key}_d"] = 0
-            
+
             excel_data.append(row)
-        
+
         # Create DataFrame and Excel file
         df = pd.DataFrame(excel_data)
         output = BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df.to_excel(writer, index=False, sheet_name='Marks')
-        
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            df.to_excel(writer, index=False, sheet_name="Marks")
+
         output.seek(0)
-        
+
         # Generate filename
         filename = f"{subject}_{exam_type}_{class_year}_marks.xlsx"
-        
+
         return send_file(
             output,
             as_attachment=True,
             download_name=filename,
-            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
-        
+
     except Exception as e:
         print(f"Error generating Excel: {str(e)}")
         return jsonify({"error": str(e)}), 500
@@ -1189,16 +1203,18 @@ def insert_test_data_for_student(roll_number):
     if session.get("user_type") != "teacher":
         flash("Unauthorized access", "error")
         return redirect(url_for("index"))
-    
+
     try:
         # Insert test data for the student
         success = db_results.insert_test_marks(roll_number)
-        
+
         if success:
-            flash(f"Test data inserted successfully for student {roll_number}", "success")
+            flash(
+                f"Test data inserted successfully for student {roll_number}", "success"
+            )
         else:
             flash(f"Failed to insert test data for student {roll_number}", "error")
-        
+
         return redirect(url_for("teacher_dashboard"))
     except Exception as e:
         flash(f"Error: {str(e)}", "error")
@@ -1210,14 +1226,14 @@ def insert_test_data_for_student(roll_number):
 def api_student_data(roll_number):
     if session.get("user_type") != "teacher":
         return jsonify({"error": "Unauthorized access"}), 403
-    
+
     try:
         # Get student's marks and analysis
         student_results = db_results.get_student_results(roll_number)
-        
+
         if not student_results:
             return jsonify({"error": "No data found for student"}), 404
-        
+
         # Return the raw data
         return jsonify(student_results)
     except Exception as e:

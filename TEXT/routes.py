@@ -8,7 +8,7 @@ from flask import (
     session,
     jsonify,
 )
-from database.db_utils import UserAuth, CourseManager
+from database.db_utils import UserAuth, CourseManager  # type: ignore
 from functools import wraps
 
 app = Flask(__name__)

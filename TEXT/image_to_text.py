@@ -10,7 +10,7 @@ load_dotenv()
 
 # Configure Gemini API
 API_KEY = os.getenv("API_KEY")
-genai.configure(api_key=API_KEY)
+genai.configure(api_key=API_KEY)  # type: ignore
 
 
 def extract_text_from_image(image_path):
@@ -28,8 +28,8 @@ def extract_text_from_image(image_path):
         }
 
         # Initialize model
-        model = genai.GenerativeModel(
-            model_name="gemini-2.0-flash", generation_config=generation_config
+        model = genai.GenerativeModel(  # type: ignore
+            model_name="gemini-2.0-flash", generation_config=generation_config  # type: ignore
         )
 
         # Create focused prompt for mark extraction

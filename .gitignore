@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+*.env
+.vscode/
+
+# Databases
+database/education.db
+database/exam_analysis.db
+database/exam_results.db
+*.sqlite3
+*.db
+
+# Uploads and temporary files
+uploads/
+temp/
+venv/
+# IDE and Editor files
+.idea/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+
+# Logs
+*.log

@@ -13,7 +13,7 @@ load_dotenv()
 
 # Configure the Gemini API
 API_KEY = os.getenv("API_KEY")
-genai.configure(api_key=API_KEY)
+genai.configure(api_key=API_KEY)  # type: ignore
 
 
 def process_text_with_image(extracted_text, image_path):
