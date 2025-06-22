@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Course</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Poppins", sans-serif;
+      }
+
+      body {
+        min-height: 100vh;
+        background: #1a1a1a;
+        color: white;
+      }
+
+      .dashboard-container {
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        min-height: 100vh;
+      }
+
+      .main-content {
+        padding: 2rem;
+        background: #1e293b;
+      }
+
+      h1 {
+        color: #8b5cf6;
+        margin-bottom: 1.5rem;
+        text-align: center;
+      }
+
+      .form-container {
+        background: #2d3748;
+        padding: 2rem;
+        border-radius: 8px;
+        max-width: 500px;
+        margin: 0 auto 2rem;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      }
+
+      .form-group {
+        margin-bottom: 1.5rem;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: #a0aec0;
+      }
+
+      .form-group input[type="text"] {
+        width: 100%;
+        padding: 0.75rem;
+        border-radius: 4px;
+        border: 1px solid #4a5568;
+        background: #1a202c;
+        color: white;
+        font-size: 1rem;
+      }
+
+      .form-group input[type="text"]:focus {
+        outline: none;
+        border-color: #8b5cf6;
+        box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.5);
+      }
+
+      .submit-button {
+        display: block;
+        width: 100%;
+        padding: 0.75rem;
+        background: #8b5cf6;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1.1rem;
+        transition: background-color 0.3s ease;
+      }
+
+      .submit-button:hover {
+        background: #7c3aed;
+      }
+
+      .message-box {
+        text-align: center;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 8px;
+        font-weight: 500;
+      }
+      .message-box.success {
+        background-color: #34d399; /* green */
+        color: white;
+      }
+      .message-box.error {
+        background-color: #f87171; /* red */
+        color: white;
+      }
+
+      .course-list-container {
+        background: #2d3748;
+        padding: 1.5rem;
+        border-radius: 8px;
+        max-width: 600px;
+        margin: 0 auto;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      }
+
+      .course-list-container h3 {
+        color: #8b5cf6;
+        margin-bottom: 1rem;
+        text-align: center;
+      }
+
+      .course-list {
+        list-style: none;
+        padding: 0;
+      }
+
+      .course-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #4a5568;
+      }
+
+      .course-item:last-child {
+        border-bottom: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dashboard-container">
+      {% include 'sidebar.html' %}
+
+      <main class="main-content">
+        <h1>Add New Course</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %} {% if
+        messages %}
+        <div class="message-container">
+          {% for category, message in messages %}
+          <div class="message-box {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+        {% endif %} {% endwith %}
+
+        <div class="form-container">
+          <form method="POST" action="{{ url_for('add_course_page') }}">
+            <div class="form-group">
+              <label for="course_id">Course ID:</label>
+              <input
+                type="text"
+                id="course_id"
+                name="course_id"
+                required
+                placeholder="e.g., CS101"
+              />
+            </div>
+            <div class="form-group">
+              <label for="course_name">Course Name:</label>
+              <input
+                type="text"
+                id="course_name"
+                name="course_name"
+                required
+                placeholder="e.g., Introduction to Programming"
+              />
+            </div>
+            <button type="submit" class="submit-button">Add Course</button>
+          </form>
+        </div>
+
+        <div class="course-list-container">
+          <h3>My Courses</h3>
+          {% if courses %}
+          <ul class="course-list">
+            {% for course in courses %}
+            <li class="course-item">
+              <span>{{ course.course_id }} - {{ course.course_name }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p style="text-align: center; color: #a0aec0">
+            No courses added yet.
+          </p>
+          {% endif %}
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

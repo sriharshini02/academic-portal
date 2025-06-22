@@ -11,6 +11,8 @@ if not os.path.exists("./database"):
 def create_connection():
     try:
         conn = sqlite3.connect("./database/education.db")
+        # Enable foreign key support (important for cascading deletes)
+        conn.execute("PRAGMA foreign_keys = ON;")
         return conn
     except sqlite3.Error as e:
         print(f"Database connection error: {e}")
@@ -26,7 +28,7 @@ def init_db():
             # Create students table
             c.execute(
                 """CREATE TABLE IF NOT EXISTS students
-                        (id TEXT PRIMARY KEY, 
+                        (id TEXT PRIMARY KEY,
                          full_name TEXT NOT NULL,
                          department TEXT NOT NULL,
                          password TEXT NOT NULL)"""
@@ -42,6 +44,44 @@ def init_db():
                          password TEXT NOT NULL)"""
             )
 
+            # Create students_results table (exam results summary)
+            c.execute(
+                """CREATE TABLE IF NOT EXISTS students_results
+                        (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                         roll_number TEXT NOT NULL,
+                         class_year TEXT NOT NULL,
+                         subject TEXT NOT NULL,
+                         exam_type TEXT NOT NULL,
+                         year INTEGER NOT NULL, -- Academic year (e.g., 2023)
+                         total_marks REAL NOT NULL,
+                         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)"""
+            )
+
+            # Create question_marks table (detailed marks per question part)
+            c.execute(
+                """CREATE TABLE IF NOT EXISTS question_marks
+                        (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                         result_id INTEGER NOT NULL,
+                         question_number INTEGER NOT NULL,
+                         part_a REAL NOT NULL,
+                         part_b REAL NOT NULL,
+                         part_c REAL NOT NULL,
+                         part_d REAL NOT NULL,
+                         FOREIGN KEY(result_id) REFERENCES students_results(id) ON DELETE CASCADE)"""
+            )
+
+            # --- New Tables for COs ---
+            # Create courses table
+            # Assuming a course is taught by one teacher and has a unique ID and name
+            c.execute(
+                """CREATE TABLE IF NOT EXISTS courses
+                        (course_id TEXT PRIMARY KEY,
+                         course_name TEXT NOT NULL,
+                         teacher_id TEXT, -- Can be NULL initially if course created before teacher assignment
+                         UNIQUE(course_id, teacher_id), -- A course can be taught by one teacher at a time
+                         FOREIGN KEY(teacher_id) REFERENCES teachers(id) ON DELETE SET NULL)"""
+            )
+
             conn.commit()
         except sqlite3.Error as e:
             print(f"Database initialization error: {e}")
@@ -53,925 +93,749 @@ def check_existing_id(user_id):
     conn = create_connection()
     if conn:
         try:
-            c = conn.cursor()
-
-            # Check in students table
-            c.execute("SELECT id FROM students WHERE id = ?", (user_id,))
-            if c.fetchone():
-                return True, "Student ID already exists"
-
-            # Check in teachers table
-            c.execute("SELECT id FROM teachers WHERE id = ?", (user_id,))
-            if c.fetchone():
-                return True, "Teacher ID already exists"
-
-            return False, ""
-        finally:
-            conn.close()
-    return True, "Database error"
-
-
-def register_student(student_id, full_name, department, password):
-    # Check if ID already exists
-    exists, message = check_existing_id(student_id)
-    if exists:
-        return False, message
-
-    conn = create_connection()
-    if conn:
-        try:
-            c = conn.cursor()
-            hashed_password = generate_password_hash(password)
-            c.execute(
-                "INSERT INTO students (id, full_name, department, password) VALUES (?, ?, ?, ?)",
-                (student_id, full_name, department, hashed_password),
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT id FROM students WHERE id = ? UNION SELECT id FROM teachers WHERE id = ?",
+                (user_id, user_id),
             )
-            conn.commit()
-            return True, "Student registration successful!"
+            return cursor.fetchone() is not None
         except sqlite3.Error as e:
-            return False, f"Registration failed: {str(e)}"
+            print(f"Error checking existing ID: {e}")
+            return False
         finally:
             conn.close()
-    return False, "Database connection error"
-
-
-def register_teacher(teacher_id, full_name, department, specialization, password):
-    # Check if ID already exists
-    exists, message = check_existing_id(teacher_id)
-    if exists:
-        return False, message
-
-    conn = create_connection()
-    if conn:
-        try:
-            c = conn.cursor()
-            hashed_password = generate_password_hash(password)
-            c.execute(
-                "INSERT INTO teachers (id, full_name, department, specialization, password) VALUES (?, ?, ?, ?, ?)",
-                (teacher_id, full_name, department, specialization, hashed_password),
-            )
-            conn.commit()
-            return True, "Teacher registration successful!"
-        except sqlite3.Error as e:
-            return False, f"Registration failed: {str(e)}"
-        finally:
-            conn.close()
-    return False, "Database connection error"
-
-
-def verify_student(student_id, password):
-    conn = create_connection()
-    if conn:
-        try:
-            c = conn.cursor()
-            c.execute("SELECT * FROM students WHERE id = ?", (student_id,))
-            student = c.fetchone()
-
-            if not student:
-                return False, "Invalid Student ID"
-
-            if check_password_hash(student[3], password):
-                return True, {
-                    "id": student[0],
-                    "full_name": student[1],
-                    "department": student[2],
-                }
-            return False, "Invalid Password"
-        finally:
-            conn.close()
-    return False, "Database connection error"
-
-
-def verify_teacher(teacher_id, password):
-    conn = create_connection()
-    if conn:
-        try:
-            c = conn.cursor()
-            c.execute("SELECT * FROM teachers WHERE id = ?", (teacher_id,))
-            teacher = c.fetchone()
-
-            if not teacher:
-                return False, "Invalid Teacher ID"
-
-            if check_password_hash(teacher[4], password):
-                return True, {
-                    "id": teacher[0],
-                    "full_name": teacher[1],
-                    "department": teacher[2],
-                }
-            return False, "Invalid Password"
-        finally:
-            conn.close()
-    return False, "Database connection error"
 
 
 class Database:
-    def __init__(self, db_file="./database/exam_analysis.db"):
-        self.db_file = db_file
-        self.init_db()
+    # No need for __init__ as methods create connections as needed
+    # This prevents issues with long-lived connections and threading
 
-    def get_connection(self):
-        return sqlite3.connect(self.db_file)
+    def register_student(self, full_name, student_id, department, password):
+        conn = create_connection()
+        if conn:
+            try:
+                c = conn.cursor()
+                if check_existing_id(student_id):
+                    return False, "Student ID already exists."
 
-    def init_db(self):
-        """Initialize database tables"""
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
-
-            # Create Teachers table
-            cursor.execute(
-                """
-                CREATE TABLE IF NOT EXISTS teachers (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL,
-                    email TEXT UNIQUE NOT NULL,
-                    department TEXT NOT NULL
+                hashed_password = generate_password_hash(password)
+                c.execute(
+                    "INSERT INTO students (id, full_name, department, password) VALUES (?, ?, ?, ?)",
+                    (student_id, full_name, department, hashed_password),
                 )
-            """
-            )
+                conn.commit()
+                return True, "Student registered successfully."
+            except sqlite3.Error as e:
+                return False, f"Database error: {e}"
+            finally:
+                conn.close()
 
-            # Create Classes table
-            cursor.execute(
-                """
-                CREATE TABLE IF NOT EXISTS classes (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    year TEXT NOT NULL,  -- FY, SY, TY, Final
-                    department TEXT NOT NULL,
-                    academic_year TEXT NOT NULL
-                )
-            """
-            )
+    def register_teacher(
+        self, full_name, teacher_id, department, specialization, password
+    ):
+        conn = create_connection()
+        if conn:
+            try:
+                c = conn.cursor()
+                if check_existing_id(teacher_id):
+                    return False, "Teacher ID already exists."
 
-            # Create Subjects table
-            cursor.execute(
-                """
-                CREATE TABLE IF NOT EXISTS subjects (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL,
-                    class_id INTEGER,
-                    teacher_id INTEGER,
-                    FOREIGN KEY (class_id) REFERENCES classes (id),
-                    FOREIGN KEY (teacher_id) REFERENCES teachers (id)
-                )
-            """
-            )
-
-            # Create Exams table
-            cursor.execute(
-                """
-                CREATE TABLE IF NOT EXISTS exams (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    exam_type TEXT NOT NULL,  -- MID1, MID2
-                    subject_id INTEGER,
-                    date_conducted DATE NOT NULL,
-                    FOREIGN KEY (subject_id) REFERENCES subjects (id)
-                )
-            """
-            )
-
-            # Create Student Results table
-            cursor.execute(
-                """
-                CREATE TABLE IF NOT EXISTS student_results (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    exam_id INTEGER,
-                    roll_number TEXT NOT NULL,
-                    Q1a INTEGER, Q1b INTEGER, Q1c INTEGER, Q1d INTEGER,
-                    Q2a INTEGER, Q2b INTEGER, Q2c INTEGER, Q2d INTEGER,
-                    Q3a INTEGER, Q3b INTEGER, Q3c INTEGER, Q3d INTEGER,
-                    Q4a INTEGER, Q4b INTEGER, Q4c INTEGER, Q4d INTEGER,
-                    Q5a INTEGER, Q5b INTEGER, Q5c INTEGER, Q5d INTEGER,
-                    Q6a INTEGER, Q6b INTEGER, Q6c INTEGER, Q6d INTEGER,
-                    total_marks INTEGER,
-                    FOREIGN KEY (exam_id) REFERENCES exams (id)
-                )
-            """
-            )
-
-    def save_exam_results(self, exam_data, results_data):
-        """Save exam results to database"""
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
-
-            # Insert exam details
-            cursor.execute(
-                """
-                INSERT INTO exams (exam_type, subject_id, date_conducted)
-                VALUES (?, ?, ?)
-            """,
-                (
-                    exam_data["exam_type"],
-                    exam_data["subject_id"],
-                    datetime.now().date(),
-                ),
-            )
-
-            exam_id = cursor.lastrowid
-
-            # Insert student results
-            for result in results_data:
-                cursor.execute(
-                    """
-                    INSERT INTO student_results (
-                        exam_id, roll_number,
-                        Q1a, Q1b, Q1c, Q1d,
-                        Q2a, Q2b, Q2c, Q2d,
-                        Q3a, Q3b, Q3c, Q3d,
-                        Q4a, Q4b, Q4c, Q4d,
-                        Q5a, Q5b, Q5c, Q5d,
-                        Q6a, Q6b, Q6c, Q6d,
-                        total_marks
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
+                hashed_password = generate_password_hash(password)
+                c.execute(
+                    "INSERT INTO teachers (id, full_name, department, specialization, password) VALUES (?, ?, ?, ?, ?)",
                     (
-                        exam_id,
-                        result["roll_number"],
-                        *[
-                            result["questions"][f"Q{i}"][part]
-                            for i in range(1, 7)
-                            for part in ["a", "b", "c", "d"]
-                        ],
-                        result["total_marks"],
+                        teacher_id,
+                        full_name,
+                        department,
+                        specialization,
+                        hashed_password,
                     ),
                 )
+                conn.commit()
+                return True, "Teacher registered successfully."
+            except sqlite3.Error as e:
+                return False, f"Database error: {e}"
+            finally:
+                conn.close()
 
-    def get_analysis(self, class_id=None, exam_type=None, subject_id=None):
-        """Get analysis of exam results"""
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
+    def verify_student(self, student_id, password):
+        conn = create_connection()
+        if conn:
+            try:
+                c = conn.cursor()
+                c.execute("SELECT * FROM students WHERE id = ?", (student_id,))
+                student = c.fetchone()
+                if student and check_password_hash(
+                    student[3], password
+                ):  # student[3] is the hashed password
+                    return {
+                        "id": student[0],
+                        "full_name": student[1],
+                    }, "Login successful."
+                return None, "Invalid student ID or password."
+            except sqlite3.Error as e:
+                return None, f"Database error: {e}"
+            finally:
+                conn.close()
 
-            query = """
-                SELECT 
-                    COUNT(*) as total_students,
-                    COUNT(CASE WHEN total_marks >= 40 THEN 1 END) as passed_students,
-                    MAX(total_marks) as highest_mark,
-                    MIN(total_marks) as lowest_mark,
-                    AVG(total_marks) as average_mark
-                FROM student_results sr
-                JOIN exams e ON sr.exam_id = e.id
-                JOIN subjects s ON e.subject_id = s.id
-                WHERE 1=1
-            """
-            params = []
+    def verify_teacher(self, teacher_id, password):
+        conn = create_connection()
+        if conn:
+            try:
+                c = conn.cursor()
+                c.execute("SELECT * FROM teachers WHERE id = ?", (teacher_id,))
+                teacher = c.fetchone()
+                if teacher and check_password_hash(
+                    teacher[4], password
+                ):  # teacher[4] is the hashed password
+                    return {
+                        "id": teacher[0],
+                        "full_name": teacher[1],
+                        "department": teacher[2],
+                        "specialization": teacher[3],
+                    }, "Login successful."
+                return None, f"Invalid teacher ID or password."
+            except sqlite3.Error as e:
+                return None, f"Database error: {e}"
+            finally:
+                conn.close()
 
-            if class_id:
-                query += " AND s.class_id = ?"
-                params.append(class_id)
-
-            if exam_type:
-                query += " AND e.exam_type = ?"
-                params.append(exam_type)
-
-            if subject_id:
-                query += " AND s.id = ?"
-                params.append(subject_id)
-
-            cursor.execute(query, params)
-            result = cursor.fetchone()
-
-            if result:
-                total_students, passed_students, highest, lowest, average = result
-                pass_percentage = (
-                    (passed_students / total_students * 100)
-                    if total_students > 0
-                    else 0
+    def get_teacher_info(self, teacher_id):
+        conn = create_connection()
+        if conn:
+            try:
+                c = conn.cursor()
+                c.execute(
+                    "SELECT full_name, department, specialization FROM teachers WHERE id = ?",
+                    (teacher_id,),
                 )
+                return c.fetchone()
+            except sqlite3.Error as e:
+                print(f"Error getting teacher info: {e}")
+                return None
+            finally:
+                conn.close()
 
-                return {
-                    "total_students": total_students,
-                    "pass_percentage": round(pass_percentage, 2),
-                    "highest_mark": highest,
-                    "lowest_mark": lowest,
-                    "average_mark": round(average, 2) if average else 0,
-                }
-            return None
+    def get_student_info(self, student_id):
+        conn = create_connection()
+        if conn:
+            try:
+                c = conn.cursor()
+                c.execute(
+                    "SELECT full_name, department FROM students WHERE id = ?",
+                    (student_id,),
+                )
+                return c.fetchone()
+            except sqlite3.Error as e:
+                print(f"Error getting student info: {e}")
+                return None
+            finally:
+                conn.close()
+
+    # --- Course management methods (needed for CO feature) ---
+    def add_course(self, course_id, course_name, teacher_id):
+        conn = create_connection()
+        if conn:
+            try:
+                c = conn.cursor()
+                c.execute(
+                    "INSERT OR IGNORE INTO courses (course_id, course_name, teacher_id) VALUES (?, ?, ?)",
+                    (course_id, course_name, teacher_id),
+                )
+                conn.commit()
+                return True, "Course added/updated successfully."
+            except sqlite3.IntegrityError:
+                return False, "Course ID already exists for this teacher."
+            except sqlite3.Error as e:
+                return False, f"Database error: {e}"
+            finally:
+                conn.close()
+
+    def get_teacher_courses(self, teacher_id):
+        conn = create_connection()
+        if conn:
+            try:
+                c = conn.cursor()
+                c.execute(
+                    "SELECT course_id, course_name FROM courses WHERE teacher_id = ?",
+                    (teacher_id,),
+                )
+                return [
+                    {"course_id": row[0], "course_name": row[1]} for row in c.fetchall()
+                ]
+            except sqlite3.Error as e:
+                print(f"Error getting teacher courses: {e}")
+                return []
+            finally:
+                conn.close()
 
 
 class ResultsDatabase:
-    def __init__(self, db_file="./database/exam_results.db"):
-        self.db_file = db_file
-        self.init_db()
-
-    def get_connection(self):
-        return sqlite3.connect(self.db_file)
-
-    def init_db(self):
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
-
-            # Drop existing tables if they exist
-            cursor.execute("DROP TABLE IF EXISTS question_marks")
-            cursor.execute("DROP TABLE IF EXISTS students_results")
-
-            # Create tables for storing results
-            cursor.execute(
-                """
-                CREATE TABLE IF NOT EXISTS students_results (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    roll_number TEXT NOT NULL,
-                    class_year TEXT NOT NULL,
-                    subject TEXT NOT NULL,
-                    exam_type TEXT NOT NULL,
-                    academic_year TEXT NOT NULL,
-                    total_marks FLOAT NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(roll_number, class_year, subject, exam_type, academic_year)
-                )
-            """
-            )
-
-            cursor.execute(
-                """
-                CREATE TABLE IF NOT EXISTS question_marks (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    result_id INTEGER NOT NULL,
-                    question_number INTEGER NOT NULL,
-                    part_a FLOAT DEFAULT 0,
-                    part_b FLOAT DEFAULT 0,
-                    part_c FLOAT DEFAULT 0,
-                    part_d FLOAT DEFAULT 0,
-                    FOREIGN KEY (result_id) REFERENCES students_results(id),
-                    UNIQUE(result_id, question_number)
-                )
-            """
-            )
-
-    def save_results(self, results, class_year, subject, exam_type, academic_year):
-        """Save results to database"""
-        successful_saves = 0
-        errors = []
-
-        for entry in results:
+    def insert_student_result(
+        self, roll_number, class_year, subject, exam_type, year, total_marks
+    ):
+        conn = create_connection()
+        if conn:
             try:
-                with self.get_connection() as conn:
-                    cursor = conn.cursor()
+                c = conn.cursor()
+                # Check if result already exists for the same student, subject, exam_type, and academic_year
+                c.execute(
+                    """SELECT id FROM students_results
+                    WHERE roll_number = ? AND subject = ? AND exam_type = ? AND year = ?""",
+                    (roll_number, subject, exam_type, year),
+                )
+                existing_result = c.fetchone()
 
-                    roll_number = entry.get("roll_number")
-                    if not roll_number:
-                        print("Missing roll number, skipping entry")
-                        continue
-
-                    # First check if this exact combination exists
-                    cursor.execute(
-                        """
-                        SELECT id FROM students_results 
-                        WHERE roll_number = ? AND class_year = ? AND subject = ? AND exam_type = ? AND academic_year = ?
-                    """,
-                        (roll_number, class_year, subject, exam_type, academic_year),
+                if existing_result:
+                    result_id = existing_result[0]
+                    # Update total marks in students_results
+                    c.execute(
+                        """UPDATE students_results SET total_marks = ?, timestamp = CURRENT_TIMESTAMP
+                        WHERE id = ?""",
+                        (total_marks, result_id),
+                    )
+                    # Delete old question marks for this result_id
+                    c.execute(
+                        """DELETE FROM question_marks WHERE result_id = ?""",
+                        (result_id,),
+                    )
+                    print(
+                        f"Updated existing entry for {roll_number} - {subject} - {exam_type}"
+                    )
+                else:
+                    # Insert new result into students_results
+                    c.execute(
+                        """INSERT INTO students_results
+                        (roll_number, class_year, subject, exam_type, year, total_marks)
+                        VALUES (?, ?, ?, ?, ?, ?)""",
+                        (
+                            roll_number,
+                            class_year,
+                            subject,
+                            exam_type,
+                            year,
+                            total_marks,
+                        ),
+                    )
+                    result_id = c.lastrowid
+                    print(
+                        f"Inserted new entry for {roll_number} - {subject} - {exam_type}"
                     )
 
-                    existing_record = cursor.fetchone()
-                    total_marks = entry.get("total_marks", 0)
-                    questions = entry.get("questions", {})
+                conn.commit()
+                return result_id  # Return the result_id for inserting question marks
+            except sqlite3.Error as e:
+                print(f"Error inserting student result: {e}")
+                return None
+            finally:
+                conn.close()
 
-                    if existing_record:
-                        # Update existing record
-                        result_id = existing_record[0]
-                        cursor.execute(
-                            """
-                            UPDATE students_results 
-                            SET total_marks = ?
-                            WHERE id = ?
-                        """,
-                            (total_marks, result_id),
-                        )
+    def insert_question_marks(
+        self, result_id, question_number, part_a, part_b, part_c, part_d
+    ):
+        conn = create_connection()
+        if conn:
+            try:
+                c = conn.cursor()
+                c.execute(
+                    """INSERT INTO question_marks
+                    (result_id, question_number, part_a, part_b, part_c, part_d)
+                    VALUES (?, ?, ?, ?, ?, ?)""",
+                    (result_id, question_number, part_a, part_b, part_c, part_d),
+                )
+                conn.commit()
+                return True
+            except sqlite3.Error as e:
+                print(f"Error inserting question marks: {e}")
+                return False
+            finally:
+                conn.close()
 
-                        # Delete existing question marks
-                        cursor.execute(
-                            "DELETE FROM question_marks WHERE result_id = ?",
-                            (result_id,),
+    def get_all_results(self):
+        conn = create_connection()
+        if conn:
+            try:
+                c = conn.cursor()
+                c.execute(
+                    """SELECT sr.id, sr.roll_number, sr.class_year, sr.subject, sr.exam_type, sr.year, sr.total_marks, sr.timestamp,
+                                qm.question_number, qm.part_a, qm.part_b, qm.part_c, qm.part_d
+                                FROM students_results sr
+                                JOIN question_marks qm ON sr.id = qm.result_id
+                                ORDER BY sr.timestamp DESC, sr.roll_number, qm.question_number"""
+                )
+                rows = c.fetchall()
+
+                results = {}
+                for row in rows:
+                    (
+                        result_id,
+                        roll_number,
+                        class_year,
+                        subject,
+                        exam_type,
+                        year,
+                        total_marks,
+                        timestamp,
+                        q_num,
+                        part_a,
+                        part_b,
+                        part_c,
+                        part_d,
+                    ) = row
+                    if result_id not in results:  # Group by result_id first
+                        results[result_id] = {
+                            "id": result_id,
+                            "roll_number": roll_number,
+                            "class_year": class_year,
+                            "subject": subject,
+                            "exam_type": exam_type,
+                            "year": year,
+                            "total_marks": total_marks,
+                            "timestamp": timestamp,
+                            "questions": {},
+                        }
+                    results[result_id]["questions"][f"Q{q_num}"] = {
+                        "a": part_a,
+                        "b": part_b,
+                        "c": part_c,
+                        "d": part_d,
+                    }
+                return list(results.values())
+            except sqlite3.Error as e:
+                print(f"Error fetching all results: {e}")
+                return []
+            finally:
+                conn.close()
+
+    def get_filtered_results(self, class_year, subject, exam_type):
+        conn = create_connection()
+        if conn:
+            try:
+                c = conn.cursor()
+                c.execute(
+                    """SELECT sr.id, sr.roll_number, sr.class_year, sr.subject, sr.exam_type, sr.year, sr.total_marks, sr.timestamp,
+                    qm.question_number, qm.part_a, qm.part_b, qm.part_c, qm.part_d
+                    FROM students_results sr
+                    JOIN question_marks qm ON sr.id = qm.result_id
+                    WHERE sr.class_year = ? AND sr.subject = ? AND sr.exam_type = ?
+                    ORDER BY sr.roll_number, qm.question_number""",
+                    (class_year, subject, exam_type),
+                )
+                rows = c.fetchall()
+                results = []
+                current_result = None
+                for row in rows:
+                    (
+                        result_id,
+                        roll_number,
+                        class_year_db,  # Use a different name to avoid conflict
+                        subject_db,
+                        exam_type_db,
+                        year_db,
+                        total_marks,
+                        timestamp,
+                        q_num,
+                        part_a,
+                        part_b,
+                        part_c,
+                        part_d,
+                    ) = row
+                    if not current_result or current_result["id"] != result_id:
+                        if current_result:
+                            results.append(current_result)
+                        current_result = {
+                            "id": result_id,
+                            "roll_number": roll_number,
+                            "class_year": class_year_db,
+                            "subject": subject_db,
+                            "exam_type": exam_type_db,  # Pass this exam_type to determine CO
+                            "year": year_db,
+                            "total_marks": total_marks,
+                            "timestamp": timestamp,
+                            "questions": {},
+                        }
+                    current_result["questions"][f"Q{q_num}"] = {
+                        "a": part_a,
+                        "b": part_b,
+                        "c": part_c,
+                        "d": part_d,
+                    }
+                if current_result:
+                    results.append(current_result)
+                return results
+            except sqlite3.Error as e:
+                print(f"Error getting filtered results: {e}")
+                return []
+            finally:
+                conn.close()
+
+    def delete_result(self, roll_number, class_year, subject, exam_type):
+        conn = create_connection()
+        if conn:
+            try:
+                c = conn.cursor()
+                # First, get the result_id to delete from question_marks
+                c.execute(
+                    "SELECT id FROM students_results WHERE roll_number = ? AND class_year = ? AND subject = ? AND exam_type = ?",
+                    (roll_number, class_year, subject, exam_type),
+                )
+                result_row = c.fetchone()
+                if result_row:
+                    result_id = result_row[0]
+                    # CASCADE DELETE should handle question_marks deletion, just delete from students_results
+                    c.execute("DELETE FROM students_results WHERE id = ?", (result_id,))
+                    conn.commit()
+                    return True
+                return False
+            except sqlite3.Error as e:
+                print(f"Error deleting result: {e}")
+                return False
+            finally:
+                conn.close()
+
+    def update_question_marks(self, result_id, question_data):
+        conn = create_connection()
+        if conn:
+            try:
+                c = conn.cursor()
+
+                for q_key, parts in question_data.items():
+                    question_number_int = int(q_key.replace("Q", ""))
+                    c.execute(
+                        """UPDATE question_marks
+                        SET part_a = ?, part_b = ?, part_c = ?, part_d = ?
+                        WHERE result_id = ? AND question_number = ?""",
+                        (
+                            parts["a"],
+                            parts["b"],
+                            parts["c"],
+                            parts["d"],
+                            result_id,
+                            question_number_int,
+                        ),
+                    )
+
+                # Recalculate total_marks for students_results
+                c.execute(
+                    """SELECT SUM(part_a + part_b + part_c + part_d) FROM question_marks WHERE result_id = ?""",
+                    (result_id,),
+                )
+                new_total_marks = c.fetchone()[0]
+                c.execute(
+                    """UPDATE students_results SET total_marks = ? WHERE id = ?""",
+                    (new_total_marks, result_id),
+                )
+                conn.commit()
+                return True
+            except sqlite3.Error as e:
+                print(f"Error updating question marks: {e}")
+                return False
+            finally:
+                conn.close()
+
+    def get_unique_exam_details(self):
+        conn = create_connection()
+        if conn:
+            try:
+                c = conn.cursor()
+                c.execute(
+                    "SELECT DISTINCT class_year, subject, exam_type FROM students_results"
+                )
+                return c.fetchall()
+            except sqlite3.Error as e:
+                print(f"Error getting unique exam details: {e}")
+                return []
+            finally:
+                conn.close()
+
+    def get_student_results_for_dashboard(self, student_id):
+        # This method is for basic summary, not used for detailed analytics anymore
+        conn = create_connection()
+        if conn:
+            try:
+                c = conn.cursor()
+                c.execute(
+                    """SELECT sr.total_marks, sr.subject, sr.exam_type, sr.year
+                    FROM students_results sr
+                    WHERE sr.roll_number = ?
+                    ORDER BY sr.year, sr.subject, sr.exam_type""",
+                    (student_id,),
+                )
+                rows = c.fetchall()
+                # Convert to list of dictionaries for easier processing in app.py
+                return [
+                    {
+                        "total_marks": r[0],
+                        "subject": r[1],
+                        "exam_type": r[2],
+                        "year": r[3],
+                    }
+                    for r in rows
+                ]
+            except sqlite3.Error as e:
+                print(f"Error getting student results for dashboard: {e}")
+                return []
+            finally:
+                conn.close()
+
+    def get_class_results_summary(self, class_year, subject, exam_type):
+        conn = create_connection()
+        if conn:
+            try:
+                c = conn.cursor()
+                c.execute(
+                    """SELECT sr.roll_number, sr.total_marks
+                    FROM students_results sr
+                    WHERE sr.class_year = ? AND sr.subject = ? AND sr.exam_type = ?
+                    ORDER BY sr.total_marks DESC""",
+                    (class_year, subject, exam_type),
+                )
+                return [
+                    {"roll_number": r[0], "total_marks": r[1]} for r in c.fetchall()
+                ]
+            except sqlite3.Error as e:
+                print(f"Error getting class results summary: {e}")
+                return {}
+            finally:
+                conn.close()
+
+    def get_raw_question_marks_for_co_analysis(
+        self, teacher_id, subject_name, exam_type=None, class_year=None
+    ):
+        conn = create_connection()
+        if conn:
+            try:
+                c = conn.cursor()
+                # Select only results related to courses taught by this teacher
+                # Assuming 'subject' column in students_results stores course_id/name
+
+                # Start with base query to get all relevant question marks
+                query = """
+                    SELECT
+                        sr.roll_number,
+                        sr.exam_type,
+                        qm.question_number,
+                        qm.part_a, qm.part_b, qm.part_c, qm.part_d
+                    FROM students_results sr
+                    JOIN question_marks qm ON sr.id = qm.result_id
+                    JOIN courses co ON sr.subject = co.course_id -- Join with courses to filter by teacher_id
+                    WHERE co.teacher_id = ? AND sr.subject = ?
+                """
+                params = [teacher_id, subject_name]
+
+                if exam_type:
+                    query += " AND sr.exam_type = ?"
+                    params.append(exam_type)
+                if class_year:
+                    query += " AND sr.class_year = ?"
+                    params.append(class_year)
+
+                query += " ORDER BY sr.roll_number, sr.exam_type, qm.question_number;"
+
+                c.execute(query, params)
+                return (
+                    c.fetchall()
+                )  # Returns list of tuples: (roll_number, exam_type, q_num, pa, pb, pc, pd)
+            except sqlite3.Error as e:
+                print(f"Error getting raw question marks for CO analysis: {e}")
+                return []
+            finally:
+                conn.close()
+
+    def insert_test_marks(self, roll_number):
+        conn = create_connection()
+        if conn:
+            try:
+                c = conn.cursor()
+                # Check if the student exists
+                c.execute("SELECT id FROM students WHERE id = ?", (roll_number,))
+                student_exists = c.fetchone()
+                if not student_exists:
+                    print(f"Student with roll number {roll_number} does not exist.")
+                    return False
+
+                # Ensure a default teacher exists for test courses if needed
+                default_teacher_id = "TCH001"
+                db_instance = (
+                    Database()
+                )  # Use Database class to register teacher/add course
+                c.execute("SELECT id FROM teachers WHERE id = ?", (default_teacher_id,))
+                if not c.fetchone():
+                    db_instance.register_teacher(
+                        "Test Teacher",
+                        default_teacher_id,
+                        "Computer Science",
+                        "Programming",
+                        "password123",
+                    )
+
+                subjects = [
+                    "Math",
+                    "Physics",
+                    "Chemistry",
+                ]  # These should correspond to actual course_ids/names
+                exam_types = ["Mid 1", "Final"]  # Specific exam types for CO mapping
+                current_year = datetime.now().year
+
+                for subject in subjects:
+                    # For test data, assume subject name acts as course_id for now
+                    course_id_for_test = subject
+                    # Ensure the course exists or add it (owned by default_teacher_id)
+                    db_instance.add_course(
+                        course_id_for_test, f"{subject} Course", default_teacher_id
+                    )
+
+                    for exam_type in exam_types:
+                        # Prevent duplicate test data entries for the same student, subject, exam_type, year
+                        c.execute(
+                            """SELECT id FROM students_results
+                            WHERE roll_number = ? AND subject = ? AND exam_type = ? AND year = ?""",
+                            (roll_number, subject, exam_type, current_year),
                         )
-                    else:
-                        # Insert new record
-                        cursor.execute(
+                        if c.fetchone():
+                            print(
+                                f"Test data for {roll_number} - {subject} - {exam_type} ({current_year}) already exists. Skipping."
+                            )
+                            continue
+
+                        total_marks = round(
+                            random.uniform(50, 95), 1
+                        )  # Example total marks
+
+                        # Insert into students_results
+                        c.execute(
                             """
-                            INSERT INTO students_results 
-                            (roll_number, class_year, subject, exam_type, academic_year, total_marks)
+                            INSERT INTO students_results
+                            (roll_number, class_year, subject, exam_type, year, total_marks)
                             VALUES (?, ?, ?, ?, ?, ?)
-                        """,
+                            """,
                             (
                                 roll_number,
-                                class_year,
+                                "Year 1",
                                 subject,
                                 exam_type,
-                                academic_year,
+                                current_year,
                                 total_marks,
                             ),
                         )
-                        result_id = cursor.lastrowid
 
-                    # Insert question marks
-                    for q_num in range(1, 7):
-                        q_key = f"Q{q_num}"
-                        q_data = questions.get(q_key, {"a": 0, "b": 0, "c": 0, "d": 0})
-
-                        cursor.execute(
-                            """
-                            INSERT INTO question_marks 
-                            (result_id, question_number, part_a, part_b, part_c, part_d)
-                            VALUES (?, ?, ?, ?, ?, ?)
-                        """,
-                            (
-                                result_id,
-                                q_num,
-                                q_data.get("a", 0),
-                                q_data.get("b", 0),
-                                q_data.get("c", 0),
-                                q_data.get("d", 0),
-                            ),
-                        )
-
-                    conn.commit()
-                    successful_saves += 1
-                    print(
-                        f"Successfully processed result for roll number {roll_number}"
-                    )
-
-            except Exception as e:
-                error_msg = f"Error processing result for {entry.get('roll_number', 'Unknown')}: {str(e)}"
-                print(error_msg)
-                errors.append(error_msg)
-                continue
-
-        print(f"Total successful saves: {successful_saves}")
-        if errors:
-            print("Errors encountered:")
-            for error in errors:
-                print(error)
-
-        return successful_saves
-
-    def get_detailed_analysis(self, class_year, subject, exam_type):
-        """Get detailed analysis of exam results"""
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
-
-            analysis = {
-                "overall_stats": {},
-                "question_stats": {},
-                "performance_trends": {},
-                "student_distribution": {},
-                "top_performers": [],
-                "needs_improvement": [],
-            }
-
-            # Get overall statistics
-            cursor.execute(
-                """
-                SELECT 
-                    COUNT(*) as total_students,
-                    AVG(total_marks) as avg_marks,
-                    MAX(total_marks) as max_marks,
-                    MIN(total_marks) as min_marks,
-                    COUNT(CASE WHEN total_marks >= 20 THEN 1 END) as passed_count
-                FROM students_results
-                WHERE class_year = ? AND subject = ? AND exam_type = ?
-            """,
-                (class_year, subject, exam_type),
-            )
-
-            result = cursor.fetchone()
-            if result:
-                total_students = result[0]
-                analysis["overall_stats"] = {
-                    "total_students": total_students,
-                    "average_marks": round(result[1], 2) if result[1] else 0,
-                    "highest_marks": result[2],
-                    "lowest_marks": result[3],
-                    "pass_percentage": (
-                        round((result[4] / total_students * 100), 2)
-                        if total_students > 0
-                        else 0
-                    ),
-                }
-
-            # Get question-wise statistics
-            for q_num in range(1, 7):
-                cursor.execute(
-                    """
-                    SELECT 
-                        AVG(part_a) as avg_a,
-                        AVG(part_b) as avg_b,
-                        AVG(part_c) as avg_c,
-                        AVG(part_d) as avg_d,
-                        MAX(part_a + part_b + part_c + part_d) as max_total,
-                        MIN(part_a + part_b + part_c + part_d) as min_total
-                    FROM question_marks qm
-                    JOIN students_results sr ON sr.id = qm.result_id
-                    WHERE sr.class_year = ? AND sr.subject = ? 
-                    AND sr.exam_type = ? AND qm.question_number = ?
-                """,
-                    (class_year, subject, exam_type, q_num),
-                )
-
-                q_stats = cursor.fetchone()
-                if q_stats:
-                    analysis["question_stats"][f"Q{q_num}"] = {
-                        "average_marks": {
-                            "a": round(q_stats[0], 2) if q_stats[0] else 0,
-                            "b": round(q_stats[1], 2) if q_stats[1] else 0,
-                            "c": round(q_stats[2], 2) if q_stats[2] else 0,
-                            "d": round(q_stats[3], 2) if q_stats[3] else 0,
-                        },
-                        "max_total": q_stats[4],
-                        "min_total": q_stats[5],
-                    }
-
-            # Get marks distribution
-            cursor.execute(
-                """
-                SELECT 
-                    CASE 
-                        WHEN total_marks BETWEEN 0 AND 8 THEN '0-8'
-                        WHEN total_marks BETWEEN 9 AND 16 THEN '9-16'
-                        WHEN total_marks BETWEEN 17 AND 24 THEN '17-24'
-                        WHEN total_marks BETWEEN 25 AND 32 THEN '25-32'
-                        ELSE '33-40'
-                    END as range,
-                    COUNT(*) as count
-                FROM students_results
-                WHERE class_year = ? AND subject = ? AND exam_type = ?
-                GROUP BY range
-                ORDER BY range
-            """,
-                (class_year, subject, exam_type),
-            )
-
-            analysis["student_distribution"] = {
-                row[0]: row[1] for row in cursor.fetchall()
-            }
-
-            # Get top performers
-            cursor.execute(
-                """
-                SELECT roll_number, total_marks
-                FROM students_results
-                WHERE class_year = ? AND subject = ? AND exam_type = ?
-                ORDER BY total_marks DESC
-                LIMIT 5
-            """,
-                (class_year, subject, exam_type),
-            )
-
-            analysis["top_performers"] = [
-                {"roll_number": row[0], "marks": row[1]} for row in cursor.fetchall()
-            ]
-
-            # Get students needing improvement
-            cursor.execute(
-                """
-                SELECT roll_number, total_marks
-                FROM students_results
-                WHERE class_year = ? AND subject = ? AND exam_type = ?
-                    AND total_marks < (
-                        SELECT AVG(total_marks) 
-                        FROM students_results 
-                        WHERE class_year = ? AND subject = ? AND exam_type = ?
-                    )
-                ORDER BY total_marks ASC
-                LIMIT 5
-            """,
-                (class_year, subject, exam_type, class_year, subject, exam_type),
-            )
-
-            analysis["needs_improvement"] = [
-                {"roll_number": row[0], "marks": row[1]} for row in cursor.fetchall()
-            ]
-
-            return analysis
-
-    def update_result(self, roll_number, class_year, subject, exam_type, question_marks, total_marks):
-        """Update marks for a student with improved error handling"""
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
-            try:
-                # First get the result ID
-                cursor.execute(
-                    """
-                    SELECT id FROM students_results
-                    WHERE roll_number = ? AND class_year = ? AND subject = ? AND exam_type = ?
-                    """,
-                    (roll_number, class_year, subject, exam_type)
-                )
-                
-                result = cursor.fetchone()
-                if not result:
-                    print(f"Result not found for roll_number={roll_number}, class_year={class_year}, subject={subject}, exam_type={exam_type}")
-                    return False, "Result not found"
-                
-                result_id = result[0]
-                
-                # Update the total marks
-                cursor.execute(
-                    """
-                    UPDATE students_results
-                    SET total_marks = ?
-                    WHERE id = ?
-                    """,
-                    (total_marks, result_id)
-                )
-                
-                # Update question marks
-                for q_num, marks in question_marks.items():
-                    # Extract question number from key (e.g., "Q1" -> 1)
-                    q_number = int(q_num.replace("Q", ""))
-                    
-                    # Get part marks, defaulting to 0 if not provided
-                    part_a = float(marks.get("a", 0))
-                    part_b = float(marks.get("b", 0))
-                    part_c = float(marks.get("c", 0))
-                    part_d = float(marks.get("d", 0))
-                    
-                    # Check if question mark entry exists
-                    cursor.execute(
-                        """
-                        SELECT id FROM question_marks
-                        WHERE result_id = ? AND question_number = ?
-                        """,
-                        (result_id, q_number)
-                    )
-                    
-                    if cursor.fetchone():
-                        # Update existing question marks
-                        cursor.execute(
-                            """
-                            UPDATE question_marks
-                            SET part_a = ?, part_b = ?, part_c = ?, part_d = ?
-                            WHERE result_id = ? AND question_number = ?
-                            """,
-                            (part_a, part_b, part_c, part_d, result_id, q_number)
-                        )
-                    else:
-                        # Insert new question marks
-                        cursor.execute(
-                            """
-                            INSERT INTO question_marks
-                            (result_id, question_number, part_a, part_b, part_c, part_d)
-                            VALUES (?, ?, ?, ?, ?, ?)
-                            """,
-                            (result_id, q_number, part_a, part_b, part_c, part_d)
-                        )
-                
-                conn.commit()
-                print(f"Successfully updated marks for roll_number={roll_number}")
-                return True, "Marks updated successfully"
-                
-            except Exception as e:
-                conn.rollback()
-                print(f"Error updating marks: {str(e)}")
-                return False, str(e)
-
-    def delete_result(self, roll_number, class_year, subject, exam_type):
-        """Delete a student's result"""
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
-            try:
-                # First get the result ID
-                cursor.execute(
-                    """
-                    SELECT id FROM students_results
-                    WHERE roll_number = ? AND class_year = ? AND subject = ? AND exam_type = ?
-                """,
-                    (roll_number, class_year, subject, exam_type),
-                )
-
-                result = cursor.fetchone()
-                if not result:
-                    return False, "Result not found"
-
-                result_id = result[0]
-
-                # Delete question marks first (due to foreign key constraint)
-                cursor.execute(
-                    "DELETE FROM question_marks WHERE result_id = ?", (result_id,)
-                )
-
-                # Then delete the main result
-                cursor.execute(
-                    """
-                    DELETE FROM students_results
-                    WHERE id = ?
-                """,
-                    (result_id,),
-                )
-
-                conn.commit()
-                return True, "Result deleted successfully"
-            except Exception as e:
-                conn.rollback()
-                return False, str(e)
-
-    def get_student_results(self, roll_number):
-        """Get all results for a specific student with improved handling for single exam case"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-                
-                # Check if the roll number exists in the database
-                cursor.execute(
-                    "SELECT COUNT(*) FROM students_results WHERE roll_number = ?",
-                    (roll_number,)
-                )
-                count = cursor.fetchone()[0]
-                
-                if count == 0:
-                    print(f"No results found for roll number: {roll_number}")
-                    return None
-                
-                # Get overall performance data
-                cursor.execute(
-                    """
-                    SELECT 
-                        subject,
-                        exam_type,
-                        class_year,
-                        academic_year,
-                        total_marks,
-                        created_at
-                    FROM students_results
-                    WHERE roll_number = ?
-                    ORDER BY created_at DESC
-                    """,
-                    (roll_number,)
-                )
-                
-                results = []
-                for row in cursor.fetchall():
-                    results.append({
-                        "subject": row[0],
-                        "exam_type": row[1],
-                        "class_year": row[2],
-                        "academic_year": row[3],
-                        "total_marks": float(row[4]),  # Ensure it's a float
-                        "date": row[5]
-                    })
-                
-                # Get subject-wise performance with explicit casting to ensure proper numeric handling
-                cursor.execute(
-                    """
-                    SELECT 
-                        subject,
-                        CAST(AVG(total_marks) AS REAL) as avg_marks,
-                        CAST(MAX(total_marks) AS REAL) as max_marks,
-                        COUNT(*) as exam_count
-                    FROM students_results
-                    WHERE roll_number = ?
-                    GROUP BY subject
-                    """,
-                    (roll_number,)
-                )
-                
-                subject_performance = []
-                for row in cursor.fetchall():
-                    subject = row[0]
-                    avg_marks = round(float(row[1]), 2) if row[1] is not None else 0
-                    max_marks = float(row[2]) if row[2] is not None else 0
-                    exam_count = row[3]
-                    
-                    # If there's only one exam, get all marks for this subject to check if there are variations
-                    if exam_count == 1:
-                        cursor.execute(
-                            """
-                            SELECT total_marks
-                            FROM students_results
-                            WHERE roll_number = ? AND subject = ?
-                            """,
-                            (roll_number, subject)
-                        )
-                        subject_marks = [float(r[0]) for r in cursor.fetchall()]
-                        
-                        # If there are multiple entries with the same mark, add a note
-                        if len(subject_marks) == 1:
-                            note = "Only one exam taken"
-                        else:
-                            note = f"{len(subject_marks)} exams with same mark"
-                    else:
-                        note = f"{exam_count} exams taken"
-                    
-                    subject_performance.append({
-                        "subject": subject,
-                        "average_marks": avg_marks,
-                        "highest_marks": max_marks,
-                        "exam_count": exam_count,
-                        "note": note
-                    })
-                
-                # Get overall statistics with explicit casting
-                cursor.execute(
-                    """
-                    SELECT 
-                        COUNT(*) as total_exams,
-                        CAST(AVG(total_marks) AS REAL) as overall_avg,
-                        CAST(MAX(total_marks) AS REAL) as highest_mark,
-                        CAST(MIN(total_marks) AS REAL) as lowest_mark
-                    FROM students_results
-                    WHERE roll_number = ?
-                    """,
-                    (roll_number,)
-                )
-                
-                stats_row = cursor.fetchone()
-                
-                # Process the stats with careful type handling
-                if stats_row and stats_row[0] > 0:
-                    total_exams = stats_row[0]
-                    overall_average = round(float(stats_row[1]), 2) if stats_row[1] is not None else 0
-                    highest_mark = float(stats_row[2]) if stats_row[2] is not None else 0
-                    lowest_mark = float(stats_row[3]) if stats_row[3] is not None else 0
-                    
-                    # Check if this is a single exam case
-                    single_exam_case = (total_exams == 1)
-                    
-                    overall_stats = {
-                        "total_exams": total_exams,
-                        "overall_average": overall_average,
-                        "highest_mark": highest_mark,
-                        "lowest_mark": lowest_mark,
-                        "single_exam_case": single_exam_case
-                    }
-                else:
-                    overall_stats = {
-                        "total_exams": 0,
-                        "overall_average": 0,
-                        "highest_mark": 0,
-                        "lowest_mark": 0,
-                        "single_exam_case": False
-                    }
-                
-                return {
-                    "results": results,
-                    "subject_performance": subject_performance,
-                    "overall_stats": overall_stats
-                }
-        except Exception as e:
-            print(f"Error in get_student_results: {e}")
-            import traceback
-            traceback.print_exc()
-            return None
-
-    def insert_test_marks(self, roll_number):
-        """Insert test marks data for a student"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-                
-                # Check if test data already exists for this student
-                cursor.execute(
-                    "SELECT COUNT(*) FROM students_results WHERE roll_number = ?",
-                    (roll_number,)
-                )
-                
-                if cursor.fetchone()[0] > 0:
-                    print(f"Test data already exists for student {roll_number}")
-                    return True
-                
-                # Sample subjects and exam types
-                subjects = ["Mathematics", "Physics", "Computer Science", "English", "Chemistry"]
-                exam_types = ["Midterm", "Final", "Quiz", "Assignment"]
-                current_year = "2023-2024"
-                
-                # Insert sample marks for each subject
-                for subject in subjects:
-                    for exam_type in exam_types[:2]:  # Just use Midterm and Final
-                        # Generate a random mark between 60 and 95
-                        total_marks = round(random.uniform(60, 95), 1)
-                        
-                        # Insert into students_results
-                        cursor.execute(
-                            """
-                            INSERT INTO students_results 
-                            (roll_number, class_year, subject, exam_type, academic_year, total_marks)
-                            VALUES (?, ?, ?, ?, ?, ?)
-                            """,
-                            (roll_number, "Year 1", subject, exam_type, current_year, total_marks)
-                        )
-                        
                         # Get the result_id
-                        result_id = cursor.lastrowid
-                        
+                        result_id = c.lastrowid
+
                         # Insert question marks
                         for q_num in range(1, 7):
                             part_a = round(random.uniform(3, 5), 1)
                             part_b = round(random.uniform(3, 5), 1)
                             part_c = round(random.uniform(3, 5), 1)
                             part_d = round(random.uniform(3, 5), 1)
-                            
-                            cursor.execute(
+
+                            c.execute(
                                 """
-                                INSERT INTO question_marks 
+                                INSERT INTO question_marks
                                 (result_id, question_number, part_a, part_b, part_c, part_d)
                                 VALUES (?, ?, ?, ?, ?, ?)
                                 """,
-                                (result_id, q_num, part_a, part_b, part_c, part_d)
+                                (result_id, q_num, part_a, part_b, part_c, part_d),
                             )
-                
+
                 conn.commit()
-                print(f"Successfully inserted test marks data for student {roll_number}")
+                print(
+                    f"Successfully inserted test marks data for student {roll_number}"
+                )
                 return True
-                
-        except Exception as e:
-            print(f"Error inserting test data: {e}")
-            return False
+
+            except Exception as e:
+                print(f"Error inserting test data: {e}")
+                return False
+
+    # --- New method for student detailed results (including question marks) ---
+    def get_student_detailed_results(self, roll_number):
+        conn = create_connection()
+        if conn:
+            try:
+                c = conn.cursor()
+                c.execute(
+                    """
+                    SELECT
+                        sr.id, sr.roll_number, sr.class_year, sr.subject, sr.exam_type, sr.year, sr.total_marks, sr.timestamp,
+                        qm.question_number, qm.part_a, qm.part_b, qm.part_c, qm.part_d
+                    FROM students_results sr
+                    JOIN question_marks qm ON sr.id = qm.result_id
+                    WHERE sr.roll_number = ?
+                    ORDER BY sr.year ASC, sr.timestamp ASC, sr.subject ASC, sr.exam_type ASC, qm.question_number ASC
+                    """,
+                    (roll_number,),
+                )
+                rows = c.fetchall()
+
+                results = {}
+                for row in rows:
+                    (
+                        result_id,
+                        roll_number_db,
+                        class_year,
+                        subject,
+                        exam_type,
+                        year,
+                        total_marks,
+                        timestamp,
+                        q_num,
+                        part_a,
+                        part_b,
+                        part_c,
+                        part_d,
+                    ) = row
+                    if result_id not in results:
+                        results[result_id] = {
+                            "id": result_id,
+                            "roll_number": roll_number_db,
+                            "class_year": class_year,
+                            "subject": subject,
+                            "exam_type": exam_type,
+                            "year": year,
+                            "total_marks": total_marks,
+                            "timestamp": timestamp,
+                            "questions": {},
+                        }
+                    results[result_id]["questions"][f"Q{q_num}"] = {
+                        "a": part_a,
+                        "b": part_b,
+                        "c": part_c,
+                        "d": part_d,
+                    }
+                return list(results.values())
+            except sqlite3.Error as e:
+                print(f"Error getting student detailed results: {e}")
+                return []
+            finally:
+                conn.close()
+
+    # --- Methods to get all distinct exam types and class years (for CO filter dropdowns) ---
+    def get_all_exam_types(self):
+        conn = create_connection()
+        if conn:
+            try:
+                c = conn.cursor()
+                c.execute("SELECT DISTINCT exam_type FROM students_results")
+                return [row[0] for row in c.fetchall()]
+            except sqlite3.Error as e:
+                print(f"Error getting all exam types: {e}")
+                return []
+            finally:
+                conn.close()
+
+    def get_all_class_years(self):
+        conn = create_connection()
+        if conn:
+            try:
+                c = conn.cursor()
+                c.execute("SELECT DISTINCT class_year FROM students_results")
+                return [row[0] for row in c.fetchall()]
+            except sqlite3.Error as e:
+                print(f"Error getting all class years: {e}")
+                return []
+            finally:
+                conn.close()
 
 
 # Initialize the database when the module is imported

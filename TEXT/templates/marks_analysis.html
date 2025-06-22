@@ -37,6 +37,7 @@
         background: #8b5cf6;
         color: white;
         padding: 1.5rem;
+        min-height: 100vh;
       }
 
       .main-content {
@@ -44,304 +45,132 @@
         background: #1e293b;
       }
 
-      .analysis-header {
-        margin-bottom: 2rem;
-      }
-
-      .analysis-header h1 {
-        font-size: 1.5rem;
+      h1 {
         color: #8b5cf6;
-        margin-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+        text-align: center;
       }
 
       .filter-controls {
-        background: rgba(30, 41, 59, 0.8);
-        border: 1px solid rgba(139, 92, 246, 0.2);
-        padding: 1rem;
-        border-radius: 0.8rem;
+        background: #2d3748;
+        padding: 1.5rem;
+        border-radius: 8px;
         margin-bottom: 2rem;
         display: flex;
+        flex-wrap: wrap;
         gap: 1rem;
-        align-items: center;
+        align-items: flex-end;
       }
 
-      .filter-controls select {
-        background: rgba(30, 41, 59, 0.8);
-        color: white;
-        border: 1px solid rgba(139, 92, 246, 0.2);
-        padding: 0.5rem;
-        border-radius: 0.5rem;
+      .filter-group {
+        display: flex;
+        flex-direction: column;
         min-width: 150px;
       }
 
-      .analyze-btn {
+      .filter-group label {
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        color: #a0aec0;
+      }
+
+      .filter-group select,
+      .filter-group input[type="text"] {
+        padding: 0.75rem;
+        border-radius: 4px;
+        border: 1px solid #4a5568;
+        background: #1a202c;
+        color: white;
+        font-size: 1rem;
+      }
+
+      .filter-group select:focus,
+      .filter-group input[type="text"]:focus {
+        outline: none;
+        border-color: #8b5cf6;
+        box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.5);
+      }
+
+      .filter-group button {
+        padding: 0.75rem 1.5rem;
         background: #8b5cf6;
         color: white;
         border: none;
-        padding: 0.5rem 1.5rem;
-        border-radius: 0.5rem;
+        border-radius: 4px;
         cursor: pointer;
-        transition: all 0.3s ease;
+        font-size: 1rem;
+        transition: background-color 0.3s ease;
       }
 
-      .analyze-btn:hover {
+      .filter-group button:hover {
         background: #7c3aed;
       }
 
-      .stats-grid {
+      .chart-grid {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 1rem;
-        margin-bottom: 2rem;
-      }
-
-      .stat-card {
-        background: rgba(30, 41, 59, 0.8);
-        padding: 1.5rem;
-        border-radius: 0.8rem;
-        border: 1px solid rgba(139, 92, 246, 0.2);
-      }
-
-      .stat-card h3 {
-        color: #8b5cf6;
-        font-size: 0.9rem;
-        margin-bottom: 0.5rem;
-      }
-
-      .stat-card p {
-        font-size: 1.5rem;
-        font-weight: 600;
-      }
-
-      .charts-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
         gap: 2rem;
         margin-bottom: 2rem;
       }
 
-      .chart-card {
-        background: rgba(30, 41, 59, 0.8);
+      .chart-container,
+      .list-container {
+        background: #2d3748;
         padding: 1.5rem;
-        border-radius: 0.8rem;
-        border: 1px solid rgba(139, 92, 246, 0.2);
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
       }
 
-      .chart-title {
-        font-size: 1.1rem;
+      .chart-container h3,
+      .list-container h3 {
         color: #8b5cf6;
         margin-bottom: 1rem;
-        font-weight: 500;
+        text-align: center;
       }
 
-      .chart-container {
-        position: relative;
-        height: 300px;
+      .chart-container canvas {
+        max-height: 350px; /* Limit chart height */
+        width: 100% !important; /* Override Chart.js default inline width */
+        height: 100% !important; /* Override Chart.js default inline height */
       }
 
-      .performance-lists {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 2rem;
+      .list-container ul {
+        list-style: none;
+        padding: 0;
       }
 
-      .list-card {
-        background: rgba(30, 41, 59, 0.8);
-        padding: 1.5rem;
-        border-radius: 0.8rem;
-        border: 1px solid rgba(139, 92, 246, 0.2);
-      }
-
-      .list-card h3 {
-        color: #8b5cf6;
-        margin-bottom: 1rem;
-        font-size: 1.1rem;
-      }
-
-      .student-item {
+      .list-container .student-item {
         display: flex;
         justify-content: space-between;
-        padding: 0.5rem;
-        border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #4a5568;
       }
 
-      .student-item:last-child {
+      .list-container .student-item:last-child {
         border-bottom: none;
       }
 
       .student-rank {
-        color: #8b5cf6;
         font-weight: 600;
+        color: #34d399; /* Green for rank */
+        margin-right: 0.5rem;
       }
 
       .student-marks {
-        color: #10b981;
-      }
-
-      .class-overview {
-        margin-bottom: 2rem;
-      }
-
-      .section-title {
-        color: #8b5cf6;
-        font-size: 1.2rem;
-        margin-bottom: 1rem;
-      }
-
-      .class-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-        gap: 1.5rem;
-      }
-
-      .class-card {
-        background: rgba(30, 41, 59, 0.8);
-        border: 1px solid rgba(139, 92, 246, 0.2);
-        border-radius: 0.8rem;
-        padding: 1.5rem;
-      }
-
-      .class-card h3 {
-        color: #8b5cf6;
-        font-size: 1.1rem;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 1px solid rgba(139, 92, 246, 0.2);
-      }
-
-      .subject-list {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-      }
-
-      .subject-item {
-        background: rgba(30, 41, 59, 0.5);
-        border-radius: 0.5rem;
-        padding: 1rem;
-        transition: all 0.3s ease;
-      }
-
-      .subject-item:hover {
-        background: rgba(30, 41, 59, 0.7);
-        transform: translateY(-2px);
-      }
-
-      .subject-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 0.8rem;
-      }
-
-      .subject-header h4 {
-        color: #e2e8f0;
-        font-size: 1rem;
         font-weight: 500;
+        color: #60a5fa; /* Blue for marks */
       }
 
-      .exam-badges {
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
+      .no-data {
+        text-align: center;
+        padding: 2rem;
+        color: #a0aec0;
       }
 
-      .exam-badge {
-        background: #8b5cf6;
-        color: white;
-        padding: 0.2rem 0.5rem;
-        border-radius: 0.3rem;
-        font-size: 0.8rem;
-        transition: all 0.3s ease;
-      }
-
-      .exam-badge.no-data {
-        background: #475569;
-      }
-
-      .subject-stats {
-        display: flex;
-        flex-direction: column;
-        gap: 0.8rem;
-      }
-
-      .exam-stats {
-        border-top: 1px solid rgba(139, 92, 246, 0.1);
-        padding-top: 0.8rem;
-      }
-
-      .exam-label {
-        color: #8b5cf6;
-        font-weight: 500;
-        font-size: 0.9rem;
-        margin-bottom: 0.5rem;
-        display: block;
-      }
-
-      .stat-values {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-        gap: 0.8rem;
-      }
-
-      .stat-value {
-        color: #10b981;
-        font-size: 0.85rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
-
-      .stat-value i {
-        color: #8b5cf6;
-        font-size: 0.9rem;
-      }
-
-      .no-data-message {
-        color: #64748b;
-        font-size: 0.9rem;
+      #loadingMessage {
         text-align: center;
         padding: 1rem;
-        font-style: italic;
-      }
-
-      @media (max-width: 1200px) {
-        .stats-grid {
-          grid-template-columns: repeat(2, 1fr);
-        }
-      }
-
-      @media (max-width: 768px) {
-        .dashboard-container {
-          grid-template-columns: 1fr;
-        }
-        .charts-grid,
-        .performance-lists {
-          grid-template-columns: 1fr;
-        }
-        .filter-controls {
-          flex-direction: column;
-        }
-        .filter-controls select {
-          width: 100%;
-        }
-        .class-grid {
-          grid-template-columns: 1fr;
-        }
-
-        .stat-values {
-          grid-template-columns: repeat(2, 1fr);
-        }
-
-        .exam-badges {
-          margin-top: 0.5rem;
-        }
-
-        .subject-header {
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 0.5rem;
-        }
+        color: #a0aec0;
       }
     </style>
   </head>
@@ -350,218 +179,99 @@
       {% include 'sidebar.html' %}
 
       <main class="main-content">
-        <div class="analysis-header">
-          <h1>Marks Analysis</h1>
-          <div class="filter-controls">
-            <div class="filter-group">
-              <label for="yearFilter">Year</label>
-              <select id="yearFilter">
-                <option value="">All Years</option>
-                {% for year in years %}
-                <option value="{{ year }}">{{ year }}</option>
-                {% endfor %}
-              </select>
-            </div>
+        <h1>Marks Analysis</h1>
 
-            <div class="filter-group">
-              <label for="subjectFilter">Subject</label>
-              <select id="subjectFilter">
-                <option value="">All Subjects</option>
-                {% for subject in subjects %}
-                <option value="{{ subject }}">{{ subject }}</option>
-                {% endfor %}
-              </select>
-            </div>
-
-            <div class="filter-group">
-              <label for="examTypeFilter">Exam Type</label>
-              <select id="examTypeFilter">
-                <option value="">All Exams</option>
-                {% for exam_type in exam_types %}
-                <option value="{{ exam_type }}">{{ exam_type }}</option>
-                {% endfor %}
-              </select>
-            </div>
-
-            <button class="analyze-btn" onclick="updateAnalysis()">
-              <i class="fas fa-chart-line"></i> Analyze
-            </button>
+        <div class="filter-controls">
+          <div class="filter-group">
+            <label for="classYearSelect">Class Year:</label>
+            <select id="classYearSelect">
+              <option value="">Select Year</option>
+              {% for year in class_years %}
+              <option value="{{ year }}">{{ year }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="subjectSelect">Subject:</label>
+            <select id="subjectSelect">
+              <option value="">Select Subject</option>
+              {% for subject_name in subjects %}
+              <option value="{{ subject_name }}">{{ subject_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="examTypeSelect">Exam Type:</label>
+            <select id="examTypeSelect">
+              <option value="">Select Exam</option>
+              {% for exam_type_name in exam_types %}
+              <option value="{{ exam_type_name }}">{{ exam_type_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="filter-group">
+            <button onclick="fetchAnalysis()">Apply Filters</button>
           </div>
         </div>
 
-        <div class="class-overview">
-          <h2 class="section-title">Class Overview</h2>
-          <div class="class-grid">
-            {% for year in years %}
-            <div class="class-card">
-              <h3>{{ year }}</h3>
-              <div class="subject-list">
-                {% for subject in subjects %}
-                <div class="subject-item">
-                  <div class="subject-header">
-                    <h4>{{ subject }}</h4>
-                    <div class="exam-badges">
-                      {% if year in class_stats and subject in class_stats[year]
-                      %} {% for exam_type in exam_types %} {% if exam_type in
-                      class_stats[year][subject] %}
-                      <span class="exam-badge">{{ exam_type }}</span>
-                      {% endif %} {% endfor %} {% else %}
-                      <span class="exam-badge no-data">No Data</span>
-                      {% endif %}
-                    </div>
-                  </div>
-                  {% if year in class_stats and subject in class_stats[year] %}
-                  <div class="subject-stats">
-                    {% for exam_type in exam_types %} {% if exam_type in
-                    class_stats[year][subject] %}
-                    <div class="exam-stats">
-                      <span class="exam-label">{{ exam_type }}</span>
-                      <div class="stat-values">
-                        <span class="stat-value">
-                          <i class="fas fa-users"></i>
-                          {{
-                          class_stats[year][subject][exam_type]['total_students']
-                          }} students
-                        </span>
-                        <span class="stat-value">
-                          <i class="fas fa-chart-line"></i>
-                          Avg: {{
-                          class_stats[year][subject][exam_type]['avg_marks'] }}%
-                        </span>
-                        <span class="stat-value">
-                          <i class="fas fa-trophy"></i>
-                          Max: {{
-                          class_stats[year][subject][exam_type]['max_marks'] }}
-                        </span>
-                        <span class="stat-value">
-                          <i class="fas fa-check-circle"></i>
-                          Pass: {{
-                          class_stats[year][subject][exam_type]['pass_percentage']
-                          }}%
-                        </span>
-                      </div>
-                    </div>
-                    {% endif %} {% endfor %}
-                  </div>
-                  {% else %}
-                  <div class="no-data-message">
-                    No exam data available for this class and subject
-                  </div>
-                  {% endif %}
-                </div>
-                {% endfor %}
-              </div>
-            </div>
-            {% endfor %}
-          </div>
+        <div id="loadingMessage" style="display: none">Loading analysis...</div>
+        <div id="noDataMessage" class="no-data" style="display: none">
+          No analysis data available for the selected filters.
         </div>
 
-        <div class="stats-grid">
-          <div class="stat-card">
-            <h3>Total Students</h3>
-            <p id="totalStudents">0</p>
-          </div>
-          <div class="stat-card">
-            <h3>Average Marks</h3>
-            <p id="averageMarks">0.00</p>
-          </div>
-          <div class="stat-card">
-            <h3>Highest Marks</h3>
-            <p id="highestMarks">0</p>
-          </div>
-          <div class="stat-card">
-            <h3>Pass Percentage</h3>
-            <p id="passPercentage">0%</p>
-          </div>
-        </div>
-
-        <div class="charts-grid">
-          <div class="chart-card">
-            <h3 class="chart-title">Pass/Fail Distribution</h3>
-            <div class="chart-container">
-              <canvas id="passFailChart"></canvas>
-            </div>
+        <div class="chart-grid">
+          <div class="chart-container">
+            <h3>Overall Class Average</h3>
+            <canvas id="averageOverallChart"></canvas>
           </div>
 
-          <div class="chart-card">
-            <h3 class="chart-title">Score Distribution</h3>
-            <div class="chart-container">
-              <canvas id="scoreDistChart"></canvas>
-            </div>
+          <div class="chart-container">
+            <h3>Question-wise Performance</h3>
+            <canvas id="questionAnalysisChart"></canvas>
           </div>
 
-          <div class="chart-card">
-            <h3 class="chart-title">Question-wise Performance</h3>
-            <div class="chart-container">
-              <canvas id="questionAnalysisChart"></canvas>
-            </div>
+          <!-- NEW: Course Outcome Performance Chart -->
+          <div class="chart-container">
+            <h3>Performance by Course Outcome</h3>
+            <canvas id="coPerformanceChart"></canvas>
           </div>
 
-          <div class="chart-card">
-            <h3 class="chart-title">Performance Trend</h3>
-            <div class="chart-container">
-              <canvas id="performanceTrendChart"></canvas>
-            </div>
-          </div>
-        </div>
-
-        <div class="performance-lists">
-          <div class="list-card">
+          <div class="list-container">
             <h3>Top Performers</h3>
-            <div id="topPerformersList"></div>
+            <ul id="topPerformersList">
+              <li>No data</li>
+            </ul>
           </div>
 
-          <div class="list-card">
+          <div class="list-container">
             <h3>Needs Improvement</h3>
-            <div id="needsImprovementList"></div>
+            <ul id="needsImprovementList">
+              <li>No data</li>
+            </ul>
           </div>
         </div>
       </main>
     </div>
 
     <script>
-      let charts = {};
+      let charts = {}; // Object to hold chart instances
 
+      // Function to initialize all chart instances once
       function initializeCharts() {
-        // Initialize Pass/Fail Chart
-        charts.passFailChart = new Chart(
-          document.getElementById("passFailChart"),
-          {
-            type: "doughnut",
-            data: {
-              labels: ["Pass", "Fail"],
-              datasets: [
-                {
-                  data: [0, 0],
-                  backgroundColor: ["#10B981", "#EF4444"],
-                },
-              ],
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: {
-                  position: "bottom",
-                  labels: { color: "#e2e8f0" },
-                },
-              },
-            },
-          }
-        );
-
-        // Initialize Score Distribution Chart
-        charts.scoreDistChart = new Chart(
-          document.getElementById("scoreDistChart"),
-          {
+        // Overall Average Chart
+        const avgCtx = document.getElementById("averageOverallChart");
+        if (avgCtx) {
+          charts.averageOverallChart = new Chart(avgCtx, {
             type: "bar",
             data: {
-              labels: ["0-8", "9-16", "17-24", "25-32", "33-40"],
+              labels: ["Class Average"],
               datasets: [
                 {
-                  label: "Number of Students",
-                  data: [0, 0, 0, 0, 0],
-                  backgroundColor: "#8B5CF6",
+                  label: "Average Marks",
+                  data: [0], // Placeholder
+                  backgroundColor: "rgba(139, 92, 246, 0.7)",
+                  borderColor: "rgba(139, 92, 246, 1)",
+                  borderWidth: 1,
                 },
               ],
             },
@@ -571,172 +281,355 @@
               scales: {
                 y: {
                   beginAtZero: true,
+                  max: 100, // Assuming marks out of 100
+                  title: {
+                    display: true,
+                    text: "Marks (%)",
+                    color: "rgba(255, 255, 255, 0.9)",
+                  },
+                  ticks: { color: "rgba(255, 255, 255, 0.7)" },
                   grid: { color: "rgba(255, 255, 255, 0.1)" },
-                  ticks: { color: "#e2e8f0" },
                 },
                 x: {
+                  ticks: { color: "rgba(255, 255, 255, 0.7)" },
                   grid: { color: "rgba(255, 255, 255, 0.1)" },
-                  ticks: { color: "#e2e8f0" },
-                },
-              },
-            },
-          }
-        );
-
-        // Initialize Question Analysis Chart
-        charts.questionAnalysisChart = new Chart(
-          document.getElementById("questionAnalysisChart"),
-          {
-            type: "bar",
-            data: {
-              labels: ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6"],
-              datasets: [
-                {
-                  label: "Part A",
-                  data: [0, 0, 0, 0, 0, 0],
-                  backgroundColor: "#8B5CF6",
-                },
-                {
-                  label: "Part B",
-                  data: [0, 0, 0, 0, 0, 0],
-                  backgroundColor: "#EC4899",
-                },
-                {
-                  label: "Part C",
-                  data: [0, 0, 0, 0, 0, 0],
-                  backgroundColor: "#10B981",
-                },
-                {
-                  label: "Part D",
-                  data: [0, 0, 0, 0, 0, 0],
-                  backgroundColor: "#F59E0B",
-                },
-              ],
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              scales: {
-                y: {
-                  beginAtZero: true,
-                  grid: { color: "rgba(255, 255, 255, 0.1)" },
-                  ticks: { color: "#e2e8f0" },
-                },
-                x: {
-                  grid: { color: "rgba(255, 255, 255, 0.1)" },
-                  ticks: { color: "#e2e8f0" },
                 },
               },
               plugins: {
                 legend: {
-                  position: "bottom",
-                  labels: { color: "#e2e8f0" },
+                  display: false,
+                },
+                title: {
+                  display: true,
+                  text: "Class Performance",
+                  color: "rgba(255, 255, 255, 0.9)",
                 },
               },
             },
-          }
-        );
-      }
-
-      function updateAnalysis() {
-        const year = document.getElementById("yearFilter").value;
-        const subject = document.getElementById("subjectFilter").value;
-        const examType = document.getElementById("examTypeFilter").value;
-
-        if (!year || !subject || !examType) {
-          alert("Please select all filters");
-          return;
+          });
         }
 
-        fetch(
-          `/api/analysis?year=${year}&subject=${subject}&examType=${examType}`
-        )
-          .then((response) => response.json())
-          .then((data) => {
-            updateStats(data.overall_stats);
-            updateCharts(data);
-            updateLists(data);
-          })
-          .catch((error) => {
-            console.error("Error:", error);
-            alert("Error fetching analysis data");
+        // Question Analysis Chart
+        const qCtx = document.getElementById("questionAnalysisChart");
+        if (qCtx) {
+          charts.questionAnalysisChart = new Chart(qCtx, {
+            type: "line",
+            data: {
+              labels: [], // Q1, Q2, etc.
+              datasets: [
+                {
+                  label: "Part a",
+                  data: [],
+                  borderColor: "rgba(255, 99, 132, 1)",
+                  backgroundColor: "rgba(255, 99, 132, 0.2)",
+                  tension: 0.3,
+                },
+                {
+                  label: "Part b",
+                  data: [],
+                  borderColor: "rgba(54, 162, 235, 1)",
+                  backgroundColor: "rgba(54, 162, 235, 0.2)",
+                  tension: 0.3,
+                },
+                {
+                  label: "Part c",
+                  data: [],
+                  borderColor: "rgba(75, 192, 192, 1)",
+                  backgroundColor: "rgba(75, 192, 192, 0.2)",
+                  tension: 0.3,
+                },
+                {
+                  label: "Part d",
+                  data: [],
+                  borderColor: "rgba(153, 102, 255, 1)",
+                  backgroundColor: "rgba(153, 102, 255, 0.2)",
+                  tension: 0.3,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  max: 5, // Assuming marks are out of 5 for each part
+                  title: {
+                    display: true,
+                    text: "Average Marks",
+                    color: "rgba(255, 255, 255, 0.9)",
+                  },
+                  ticks: { color: "rgba(255, 255, 255, 0.7)" },
+                  grid: { color: "rgba(255, 255, 255, 0.1)" },
+                },
+                x: {
+                  ticks: { color: "rgba(255, 255, 255, 0.7)" },
+                  grid: { color: "rgba(255, 255, 255, 0.1)" },
+                },
+              },
+              plugins: {
+                legend: {
+                  labels: {
+                    color: "rgba(255, 255, 255, 0.7)",
+                  },
+                },
+                title: {
+                  display: true,
+                  text: "Question-wise Average Marks",
+                  color: "rgba(255, 255, 255, 0.9)",
+                },
+              },
+            },
           });
+        }
+
+        // NEW: CO Performance Chart
+        const coCtx = document.getElementById("coPerformanceChart");
+        if (coCtx) {
+          charts.coPerformanceChart = new Chart(coCtx, {
+            type: "bar",
+            data: {
+              labels: [], // e.g., ['CO1', 'CO2', 'CO3']
+              datasets: [
+                {
+                  label: "Average Attainment (%)",
+                  data: [],
+                  backgroundColor: [
+                    "rgba(139, 92, 246, 0.7)", // Purple
+                    "rgba(34, 197, 94, 0.7)", // Green
+                    "rgba(251, 191, 36, 0.7)", // Yellow
+                    "rgba(239, 68, 68, 0.7)", // Red
+                    "rgba(59, 130, 246, 0.7)", // Blue
+                  ],
+                  borderColor: [
+                    "rgba(139, 92, 246, 1)",
+                    "rgba(34, 197, 94, 1)",
+                    "rgba(251, 191, 36, 1)",
+                    "rgba(239, 68, 68, 1)",
+                    "rgba(59, 130, 246, 1)",
+                  ],
+                  borderWidth: 1,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  max: 100, // Percentage
+                  title: {
+                    display: true,
+                    text: "Attainment Percentage (%)",
+                    color: "rgba(255, 255, 255, 0.9)",
+                  },
+                  ticks: { color: "rgba(255, 255, 255, 0.7)" },
+                  grid: { color: "rgba(255, 255, 255, 0.1)" },
+                },
+                x: {
+                  ticks: { color: "rgba(255, 255, 255, 0.7)" },
+                  grid: { color: "rgba(255, 255, 255, 0.1)" },
+                },
+              },
+              plugins: {
+                legend: {
+                  display: false,
+                },
+                title: {
+                  display: true,
+                  text: "Overall Course Outcome Performance",
+                  color: "rgba(255, 255, 255, 0.9)",
+                },
+              },
+            },
+          });
+        }
       }
 
-      function updateStats(stats) {
-        document.getElementById("totalStudents").textContent =
-          stats.total_students;
-        document.getElementById("averageMarks").textContent =
-          stats.average_marks.toFixed(2);
-        document.getElementById("highestMarks").textContent =
-          stats.highest_marks;
-        document.getElementById("passPercentage").textContent =
-          stats.pass_percentage + "%";
-      }
-
+      // Function to update chart data with fetched data
       function updateCharts(data) {
-        // Update Pass/Fail Chart
-        const passCount = Math.round(
-          (data.overall_stats.total_students *
-            data.overall_stats.pass_percentage) /
-            100
-        );
-        const failCount = data.overall_stats.total_students - passCount;
-        charts.passFailChart.data.datasets[0].data = [passCount, failCount];
-        charts.passFailChart.update();
-
-        // Update Score Distribution Chart
-        charts.scoreDistChart.data.datasets[0].data = Object.values(
-          data.student_distribution
-        );
-        charts.scoreDistChart.update();
+        // Update Overall Average Chart
+        if (charts.averageOverallChart) {
+          charts.averageOverallChart.data.datasets[0].data = [
+            data.average_overall,
+          ];
+          charts.averageOverallChart.update();
+        }
 
         // Update Question Analysis Chart
-        const questionData = Object.values(data.question_stats);
-        charts.questionAnalysisChart.data.datasets.forEach((dataset, index) => {
-          const part = ["a", "b", "c", "d"][index];
-          dataset.data = questionData.map((q) => q.average_marks[part]);
-        });
-        charts.questionAnalysisChart.update();
+        if (charts.questionAnalysisChart && data.question_analysis) {
+          const questionLabels = data.question_analysis.map((q) => q.question);
+          const partA = data.question_analysis.map((q) => q.average_marks.a);
+          const partB = data.question_analysis.map((q) => q.average_marks.b);
+          const partC = data.question_analysis.map((q) => q.average_marks.c);
+          const partD = data.question_analysis.map((q) => q.average_marks.d);
+
+          charts.questionAnalysisChart.data.labels = questionLabels;
+          charts.questionAnalysisChart.data.datasets[0].data = partA;
+          charts.questionAnalysisChart.data.datasets[1].data = partB;
+          charts.questionAnalysisChart.data.datasets[2].data = partC;
+          charts.questionAnalysisChart.data.datasets[3].data = partD;
+          charts.questionAnalysisChart.update();
+        }
+
+        // NEW: Update CO Performance Chart
+        if (charts.coPerformanceChart && data.co_performance) {
+          const coLabels = Object.keys(data.co_performance).sort(); // Sort COs for consistent display
+          const coAverages = coLabels.map((co) => data.co_performance[co]);
+          charts.coPerformanceChart.data.labels = coLabels;
+          charts.coPerformanceChart.data.datasets[0].data = coAverages;
+          charts.coPerformanceChart.update();
+        }
       }
 
       function updateLists(data) {
         // Update Top Performers List
-        const topPerformersHtml = data.top_performers
-          .map(
-            (student, index) => `
-                <div class="student-item">
-                    <span><span class="student-rank">#${index + 1}</span> ${
-              student.roll_number
-            }</span>
-                    <span class="student-marks">${student.marks}%</span>
-                </div>
-            `
-          )
-          .join("");
-        document.getElementById("topPerformersList").innerHTML =
-          topPerformersHtml;
+        const topPerformersList = document.getElementById("topPerformersList");
+        if (data.top_performers && data.top_performers.length > 0) {
+          const topPerformersHtml = data.top_performers
+            .map(
+              (student, index) => `
+                        <div class="student-item">
+                            <span><span class="student-rank">#${
+                              index + 1
+                            }</span> ${student.roll_number}</span>
+                            <span class="student-marks">${student.marks}%</span>
+                        </div>
+                    `
+            )
+            .join("");
+          topPerformersList.innerHTML = topPerformersHtml;
+        } else {
+          topPerformersList.innerHTML = "<li>No data</li>";
+        }
 
         // Update Needs Improvement List
-        const needsImprovementHtml = data.needs_improvement
-          .map(
-            (student, index) => `
-                <div class="student-item">
-                    <span><span class="student-rank">#${index + 1}</span> ${
-              student.roll_number
-            }</span>
-                    <span class="student-marks">${student.marks}%</span>
-                </div>
-            `
-          )
-          .join("");
-        document.getElementById("needsImprovementList").innerHTML =
-          needsImprovementHtml;
+        const needsImprovementList = document.getElementById(
+          "needsImprovementList"
+        );
+        if (data.needs_improvement && data.needs_improvement.length > 0) {
+          const needsImprovementHtml = data.needs_improvement
+            .map(
+              (student, index) => `
+                        <div class="student-item">
+                            <span><span class="student-rank">#${
+                              index + 1
+                            }</span> ${student.roll_number}</span>
+                            <span class="student-marks">${student.marks}%</span>
+                        </div>
+                    `
+            )
+            .join("");
+          needsImprovementList.innerHTML = needsImprovementHtml;
+        } else {
+          needsImprovementList.innerHTML = "<li>No data</li>";
+        }
+      }
+
+      async function fetchAnalysis() {
+        const classYear = document.getElementById("classYearSelect").value;
+        const subject = document.getElementById("subjectSelect").value;
+        const examType = document.getElementById("examTypeSelect").value;
+
+        const loadingMessage = document.getElementById("loadingMessage");
+        const noDataMessage = document.getElementById("noDataMessage");
+        const chartGrid = document.querySelector(".chart-grid");
+
+        loadingMessage.style.display = "block";
+        noDataMessage.style.display = "none";
+        chartGrid.style.display = "none"; // Hide charts during loading
+
+        if (!classYear || !subject || !examType) {
+          loadingMessage.style.display = "none";
+          noDataMessage.textContent =
+            "Please select all filters to view analysis.";
+          noDataMessage.style.display = "block";
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            `/get_analysis?class_year=${classYear}&subject=${subject}&exam_type=${examType}`
+          );
+          const result = await response.json();
+
+          loadingMessage.style.display = "none";
+
+          if (
+            result.success &&
+            result.data &&
+            (Object.keys(result.data.co_performance).length > 0 ||
+              result.data.average_overall > 0 ||
+              result.data.question_analysis.length > 0 ||
+              result.data.top_performers.length > 0)
+          ) {
+            updateCharts(result.data); // Pass only the 'data' object
+            updateLists(result.data); // Pass only the 'data' object
+            chartGrid.style.display = "grid"; // Show charts after data is loaded
+          } else {
+            noDataMessage.textContent =
+              result.message ||
+              "No analysis data available for the selected filters.";
+            noDataMessage.style.display = "block";
+            // Clear existing charts/lists if no data is found for new filters
+            updateCharts({
+              average_overall: 0,
+              question_analysis: [],
+              co_performance: {},
+            });
+            updateLists({ top_performers: [], needs_improvement: [] });
+          }
+        } catch (error) {
+          loadingMessage.style.display = "none";
+          noDataMessage.textContent =
+            "Error loading analysis data. Please try again.";
+          noDataMessage.style.display = "block";
+          console.error("Error fetching analysis:", error);
+        }
       }
 
       document.addEventListener("DOMContentLoaded", () => {
         initializeCharts();
+        // Optionally, pre-fill filters from localStorage and fetch data on load
+        const storedClassYear = localStorage.getItem(
+          "selectedMarksAnalysisClassYear"
+        );
+        const storedSubject = localStorage.getItem(
+          "selectedMarksAnalysisSubject"
+        );
+        const storedExamType = localStorage.getItem(
+          "selectedMarksAnalysisExamType"
+        );
+
+        if (storedClassYear)
+          document.getElementById("classYearSelect").value = storedClassYear;
+        if (storedSubject)
+          document.getElementById("subjectSelect").value = storedSubject;
+        if (storedExamType)
+          document.getElementById("examTypeSelect").value = storedExamType;
+
+        if (storedClassYear && storedSubject && storedExamType) {
+          fetchAnalysis();
+        }
       });
+
+      // Save filter selections to localStorage when changed
+      document
+        .getElementById("classYearSelect")
+        .addEventListener("change", (e) =>
+          localStorage.setItem("selectedMarksAnalysisClassYear", e.target.value)
+        );
+      document
+        .getElementById("subjectSelect")
+        .addEventListener("change", (e) =>
+          localStorage.setItem("selectedMarksAnalysisSubject", e.target.value)
+        );
+      document
+        .getElementById("examTypeSelect")
+        .addEventListener("change", (e) =>
+          localStorage.setItem("selectedMarksAnalysisExamType", e.target.value)
+        );
     </script>
   </body>
 </html>

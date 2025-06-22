@@ -11,11 +11,7 @@ from flask import (
 )
 from database import (
     init_db,
-    register_student,
-    register_teacher,
-    verify_student,
-    verify_teacher,
-    Database,
+    Database,  # Keep Database class for auth methods
     ResultsDatabase,
 )
 from functools import wraps
@@ -28,7 +24,14 @@ import json
 from PIL import Image
 from datetime import datetime
 import re
+import shutil
+from zipfile import ZipFile
+import tempfile
+import openpyxl
+import time
+import threading
 import sqlite3
+
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key_here"  # Change this to a secure secret key
@@ -36,8 +39,9 @@ app.secret_key = "your_secret_key_here"  # Change this to a secure secret key
 # Initialize the database
 init_db()
 
-db = Database()
-db_results = ResultsDatabase()
+db = Database()  # For user authentication and course management
+db_results = ResultsDatabase()  # For student results and analysis
+
 
 # Add these configurations
 UPLOAD_FOLDER = "uploads"
@@ -56,16 +60,42 @@ def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-# Login required decorator
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if "user_type" not in session:
-            flash("Please log in first", "error")
-            return redirect(url_for("index"))
-        return f(*args, **kwargs)
+# --- New Helper Function for Course Outcomes ---
+def get_course_outcome(exam_type, question_number):
+    if exam_type == "Mid 1":
+        if question_number in [1, 2]:
+            return "CO1"
+        elif question_number in [3, 4]:
+            return "CO2"
+        elif question_number in [5, 6]:
+            return "CO3"
+    elif exam_type == "Mid 2":
+        if question_number in [1, 2]:
+            return "CO3"
+        elif question_number in [3, 4]:
+            return "CO4"
+        elif question_number in [5, 6]:
+            return "CO5"
+    # Default for unmapped questions or other exam types
+    return "N/A"
 
-    return decorated_function
+
+# Login required decorator
+def login_required(user_type):
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if "user_id" not in session or session.get("user_type") != user_type:
+                flash("Please log in to access this page.", "error")
+                if user_type == "student":
+                    return redirect(url_for("student_login"))
+                elif user_type == "teacher":
+                    return redirect(url_for("teacher_login"))
+            return f(*args, **kwargs)
+
+        return decorated_function
+
+    return decorator
 
 
 @app.route("/")
@@ -77,15 +107,14 @@ def index():
 def student_register():
     if request.method == "POST":
         try:
-            # Try to get JSON data first
+            # Try to get JSON data first (for AJAX calls from JS)
             if request.is_json:
                 data = request.get_json()
                 student_id = data.get("studentId")
                 full_name = data.get("fullName")
                 department = data.get("department")
                 password = data.get("password")
-            else:
-                # Fall back to form data
+            else:  # Fallback to form data (for traditional form submits)
                 student_id = request.form.get("studentId")
                 full_name = request.form.get("fullName")
                 department = request.form.get("department")
@@ -97,26 +126,19 @@ def student_register():
                     400,
                 )
 
-            success, message = register_student(
-                student_id, full_name, department, password
+            success, message = db.register_student(
+                full_name, student_id, department, password
             )
-
             if success:
-                return (
-                    jsonify(
-                        {
-                            "success": True,
-                            "message": "Registration successful! Please login.",
-                        }
-                    ),
-                    200,
-                )
+                return jsonify({"success": True, "message": message}), 201
             else:
-                return jsonify({"success": False, "message": message}), 400
-
+                return (
+                    jsonify({"success": False, "message": message}),
+                    409,
+                )  # Conflict for existing ID
         except Exception as e:
+            print(f"Error during student registration: {e}")
             return jsonify({"success": False, "message": str(e)}), 500
-
     return render_template("student_register.html")
 
 
@@ -124,7 +146,6 @@ def student_register():
 def teacher_register():
     if request.method == "POST":
         try:
-            # Try to get JSON data first
             if request.is_json:
                 data = request.get_json()
                 teacher_id = data.get("teacherId")
@@ -133,7 +154,6 @@ def teacher_register():
                 specialization = data.get("specialization")
                 password = data.get("password")
             else:
-                # Fall back to form data
                 teacher_id = request.form.get("teacherId")
                 full_name = request.form.get("fullName")
                 department = request.form.get("department")
@@ -146,26 +166,16 @@ def teacher_register():
                     400,
                 )
 
-            success, message = register_teacher(
-                teacher_id, full_name, department, specialization, password
+            success, message = db.register_teacher(
+                full_name, teacher_id, department, specialization, password
             )
-
             if success:
-                return (
-                    jsonify(
-                        {
-                            "success": True,
-                            "message": "Registration successful! Please login.",
-                        }
-                    ),
-                    200,
-                )
+                return jsonify({"success": True, "message": message}), 201
             else:
-                return jsonify({"success": False, "message": message}), 400
-
+                return jsonify({"success": False, "message": message}), 409
         except Exception as e:
+            print(f"Error during teacher registration: {e}")
             return jsonify({"success": False, "message": str(e)}), 500
-
     return render_template("teacher_register.html")
 
 
@@ -173,17 +183,15 @@ def teacher_register():
 def student_login():
     if request.method == "POST":
         try:
-            # Try to get JSON data first
             if request.is_json:
                 data = request.get_json()
                 student_id = data.get("studentId")
                 password = data.get("password")
             else:
-                # Fall back to form data
                 student_id = request.form.get("studentId")
                 password = request.form.get("password")
 
-            if not student_id or not password:
+            if not all([student_id, password]):
                 return (
                     jsonify(
                         {
@@ -194,19 +202,18 @@ def student_login():
                     400,
                 )
 
-            success, result = verify_student(student_id, password)
-
-            if success:
-                session["user_id"] = student_id
+            student, message = db.verify_student(student_id, password)
+            if student:
+                session["user_id"] = student["id"]
                 session["user_type"] = "student"
-                session["full_name"] = result["full_name"]
-                return jsonify({"success": True, "message": "Login successful"})
+                session["name"] = student["full_name"]
+                # You might store other student info like department if needed in session
+                return jsonify({"success": True, "message": message}), 200
             else:
-                return jsonify({"success": False, "message": result}), 401
-
+                return jsonify({"success": False, "message": message}), 401
         except Exception as e:
+            print(f"Error during student login: {e}")
             return jsonify({"success": False, "message": str(e)}), 500
-
     return render_template("student_login.html")
 
 
@@ -214,17 +221,15 @@ def student_login():
 def teacher_login():
     if request.method == "POST":
         try:
-            # Try to get JSON data first
             if request.is_json:
                 data = request.get_json()
                 teacher_id = data.get("teacherId")
                 password = data.get("password")
             else:
-                # Fall back to form data
                 teacher_id = request.form.get("teacherId")
                 password = request.form.get("password")
 
-            if not teacher_id or not password:
+            if not all([teacher_id, password]):
                 return (
                     jsonify(
                         {
@@ -235,163 +240,595 @@ def teacher_login():
                     400,
                 )
 
-            success, result = verify_teacher(teacher_id, password)
-
-            if success:
-                session["user_id"] = teacher_id
+            teacher_info, message = db.verify_teacher(teacher_id, password)
+            if teacher_info:
+                session["user_id"] = teacher_info["id"]
                 session["user_type"] = "teacher"
-                session["full_name"] = result["full_name"]
-                return jsonify({"success": True, "message": "Login successful"})
+                session["name"] = teacher_info["full_name"]
+                session["department"] = teacher_info["department"]  # Store department
+                session["specialization"] = teacher_info[
+                    "specialization"
+                ]  # Store specialization
+                return jsonify({"success": True, "message": message}), 200
             else:
-                return jsonify({"success": False, "message": result}), 401
-
+                return jsonify({"success": False, "message": message}), 401
         except Exception as e:
+            print(f"Error during teacher login: {e}")
             return jsonify({"success": False, "message": str(e)}), 500
-
     return render_template("teacher_login.html")
 
 
 @app.route("/student/dashboard")
-@login_required
+@login_required("student")  # <-- Use the decorator with the role argument
 def student_dashboard():
-    if session.get("user_type") != "student":
-        flash("Unauthorized access", "error")
-        return redirect(url_for("index"))
-
-    # Get student details from session
     student_id = session.get("user_id")
+    student_name = session.get("name", "Student")
+    department = session.get("department", "N/A")
 
-    # Debug print to check what's in the session
-    print(f"Session data for student: {session}")
-
-    # Connect to the database to get complete student information
-    conn = sqlite3.connect("./database/education.db")
-    cursor = conn.cursor()
-
-    try:
-        # Query the students table to get complete information
-        cursor.execute(
-            "SELECT id, full_name, department FROM students WHERE id = ?", (student_id,)
-        )
-        student_data = cursor.fetchone()
-
-        if student_data:
-            # Create student info dictionary with database data
-            student = {
-                "roll_number": student_data[0],
-                "name": student_data[1],
-                "department": student_data[2],
-                "class_year": session.get(
-                    "class_year", "2023-2024"
-                ),  # Default academic year if not in session
-            }
-            print(f"Found student in database: {student}")
-        else:
-            # Fallback to session data if database query fails
-            student = {
-                "roll_number": student_id,
-                "name": session.get("full_name", "Student"),
-                "department": session.get(
-                    "department", "Computer Science"
-                ),  # Provide default values
-                "class_year": session.get("class_year", "2023-2024"),
-            }
-            print(f"Using session data for student: {student}")
-    except Exception as e:
-        print(f"Error retrieving student data: {e}")
-        # Fallback with session data and defaults
-        student = {
-            "roll_number": student_id,
-            "name": session.get("full_name", "Student"),
-            "department": "Computer Science",  # Default department
-            "class_year": "2023-2024",  # Default academic year
-        }
-    finally:
-        conn.close()
-
-    # Get student's marks and analysis from ResultsDatabase
-    try:
-        # Make sure we have a valid roll number
-        if not student_id:
-            flash("Student ID not found in session", "error")
-            return redirect(url_for("index"))
-
-        print(f"Fetching results for student ID: {student_id}")
-        student_results = db_results.get_student_results(student_id)
-
-        if student_results:
-            print(
-                f"Found results for student: {len(student_results.get('results', []))} records"
-            )
-
-            # Ensure highest mark is properly set
-            if (
-                student_results["overall_stats"]["highest_mark"] == 0
-                and student_results["results"]
-            ):
-                # Calculate highest mark manually
-                highest_mark = max(
-                    float(result["total_marks"])
-                    for result in student_results["results"]
-                )
-                student_results["overall_stats"]["highest_mark"] = highest_mark
-                print(f"Manually set highest mark to: {highest_mark}")
-        else:
-            print("No results found for student")
-            # Initialize with empty data
-            student_results = {
-                "results": [],
-                "subject_performance": [],
-                "overall_stats": {
-                    "total_exams": 0,
-                    "overall_average": 0,
-                    "highest_mark": 0,
-                    "lowest_mark": 0,
-                },
-            }
-    except Exception as e:
-        print(f"Error retrieving student results: {e}")
-        import traceback
-
-        traceback.print_exc()
-        # Initialize with empty data
-        student_results = {
-            "results": [],
-            "subject_performance": [],
-            "overall_stats": {
-                "total_exams": 0,
-                "overall_average": 0,
-                "highest_mark": 0,
-                "lowest_mark": 0,
-            },
-        }
-
-    # Print debug info
-    print(f"Student data being sent to template: {student}")
-    print(f"Overall stats: {student_results.get('overall_stats', {})}")
-    if student_results.get("results"):
-        print(f"First result: {student_results['results'][0]}")
+    # Fetch student info from DB for full details, including department if not in session
+    student_info_db = db.get_student_info(student_id)
+    if student_info_db:
+        student_name = student_info_db[0]
+        department = student_info_db[1]
 
     return render_template(
         "student_dashboard.html",
-        name=student["name"],
-        student=student,
-        results=student_results["results"],
-        subject_performance=student_results["subject_performance"],
-        overall_stats=student_results["overall_stats"],
+        student_id=student_id,
+        student_name=student_name,
+        department=department,
     )
 
 
 @app.route("/teacher/dashboard")
-@login_required
+@login_required("teacher")
 def teacher_dashboard():
-    if session.get("user_type") != "teacher":
-        flash("Unauthorized access", "error")
-        return redirect(url_for("index"))
+    teacher_id = session.get("user_id")
+    teacher_name = session.get("name", "Teacher")
+    department = session.get("department", "N/A")
+    specialization = session.get("specialization", "N/A")
+
+    # Placeholder counts (implement database queries if you need dynamic counts)
+    total_students = 0
+    total_classes = 0
+    total_subjects = 0
+    recent_uploads = 0
+    recent_activities = []
+
     return render_template(
         "teacher_dashboard.html",
-        teacher_name=session.get("full_name"),
-        department=session.get("department"),
+        teacher_name=teacher_name,
+        department=department,
+        specialization=specialization,
+        total_students=total_students,
+        total_classes=total_classes,
+        total_subjects=total_subjects,
+        recent_uploads=recent_uploads,
+        recent_activities=recent_activities,
+    )
+
+
+@app.route("/upload", methods=["GET", "POST"])
+@login_required("teacher")
+def upload_page():
+    # Get courses taught by the current teacher
+    teacher_id = session.get("user_id")
+    teacher_courses = db.get_teacher_courses(teacher_id)
+
+    # Define fixed class years and exam types
+    class_years = [f"Year {i}" for i in range(1, 5)]
+    exam_types = ["Mid 1", "Mid 2", "Final"]
+
+    return render_template(
+        "upload.html",
+        teacher_courses=teacher_courses,
+        class_years=class_years,
+        exam_types=exam_types,
+    )
+
+
+@app.route("/process_upload", methods=["POST"])
+@login_required("teacher")
+def process_upload():
+    any_file_uploaded = False
+    if "folderUpload" in request.files:
+        files = request.files.getlist("folderUpload")
+        if files and files[0].filename != "":
+            any_file_uploaded = True
+    if not any_file_uploaded and "fileUpload" in request.files:
+        files = request.files.getlist("fileUpload")
+        if files and files[0].filename != "":
+            any_file_uploaded = True
+
+    if not any_file_uploaded:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "No file selected for upload. Please choose a file or folder.",
+                }
+            ),
+            400,
+        )
+
+    class_year = request.form.get("classYear")
+    subject = request.form.get("subject")
+    exam_type = request.form.get("examType")
+    academic_year = datetime.now().year
+
+    if not all([class_year, subject, exam_type]):
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Missing form data (Class Year, Subject, or Exam Type).",
+                }
+            ),
+            400,
+        )
+
+    uploaded_files = []
+    if "folderUpload" in request.files:
+        files = request.files.getlist("folderUpload")
+        for file in files:
+            if file.filename != "" and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+                file.save(filepath)
+                uploaded_files.append(filepath)
+            elif file.filename != "":
+                print(
+                    f"Skipping disallowed file type from folder upload: {file.filename}"
+                )
+
+    if "fileUpload" in request.files:
+        files = request.files.getlist("fileUpload")
+        for file in files:
+            if file.filename != "" and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+                file.save(filepath)
+                uploaded_files.append(filepath)
+            elif file.filename != "":
+                print(
+                    f"Skipping disallowed file type from single file upload: {file.filename}"
+                )
+
+    if not uploaded_files:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "No valid image files were found in your selection (only PNG, JPG, JPEG, GIF are allowed).",
+                }
+            ),
+            400,
+        )
+
+    processed_count = 0
+    for filepath in uploaded_files:
+        try:
+            extracted_data = extract_text_from_image(filepath)
+
+            print(f"Extracted data from {filepath}: {extracted_data}")
+
+            if extracted_data and isinstance(extracted_data, dict):
+                roll_number = extracted_data.get("roll_number")
+                questions_data = extracted_data.get("questions", {})
+                total_marks = extracted_data.get("total_marks")
+
+                if roll_number and total_marks is not None:
+                    result_id = db_results.insert_student_result(
+                        roll_number,
+                        class_year,
+                        subject,
+                        exam_type,
+                        academic_year,
+                        total_marks,
+                    )
+
+                    if result_id:
+                        for q_key, parts_data in questions_data.items():
+                            question_number = int(q_key.replace("Q", ""))
+                            db_results.insert_question_marks(
+                                result_id,
+                                question_number,
+                                parts_data.get(
+                                    "a", 0.0
+                                ),  # Use 0.0 for float consistency
+                                parts_data.get("b", 0.0),
+                                parts_data.get("c", 0.0),
+                                parts_data.get("d", 0.0),
+                            )
+                        processed_count += 1
+            os.remove(filepath)
+        except Exception as e:
+            print(f"Error processing {filepath}: {e}")
+            pass
+
+    if processed_count > 0:
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "message": f"Successfully processed {processed_count} files",
+                    "redirect": url_for("view_marks"),
+                }
+            ),
+            200,
+        )
+    else:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Processing finished, but no valid data could be extracted from uploaded files.",
+                }
+            ),
+            500,
+        )
+
+
+@app.route("/view_marks")
+@login_required("teacher")
+def view_marks():
+    unique_details = db_results.get_unique_exam_details()
+    class_years = sorted(list(set([d[0] for d in unique_details])))
+    subjects = sorted(list(set([d[1] for d in unique_details])))
+    exam_types = sorted(list(set([d[2] for d in unique_details])))
+
+    return render_template(
+        "view_marks.html",
+        class_years=class_years,
+        subjects=subjects,
+        exam_types=exam_types,
+    )
+
+
+@app.route("/api/get_marks", methods=["GET"])
+@login_required("teacher")
+def get_marks():
+    class_year = request.args.get("class_year")
+    subject = request.args.get("subject")
+    exam_type = request.args.get("exam_type")
+
+    if not all([class_year, subject, exam_type]):
+        return jsonify({"error": "Missing filter parameters"}), 400
+
+    results = db_results.get_filtered_results(class_year, subject, exam_type)
+
+    if results:
+        for student_result in results:
+            current_exam_type = student_result["exam_type"]
+            for q_key, q_data in student_result["questions"].items():
+                question_number = int(q_key.replace("Q", ""))
+                q_data["co"] = get_course_outcome(current_exam_type, question_number)
+
+        return jsonify({"success": True, "results": results}), 200
+    else:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "No marks found for the selected filters.",
+                }
+            ),
+            404,
+        )
+
+
+@app.route("/api/delete-marks", methods=["POST"])
+@login_required("teacher")
+def delete_marks():
+    data = request.get_json()
+    roll_number = data.get("roll_number")
+    class_year = data.get("class_year")
+    subject = data.get("subject")
+    exam_type = data.get("exam_type")
+
+    if not all([roll_number, class_year, subject, exam_type]):
+        return jsonify({"success": False, "message": "Missing parameters"}), 400
+
+    if db_results.delete_result(roll_number, class_year, subject, exam_type):
+        return (
+            jsonify({"success": True, "message": "Result deleted successfully!"}),
+            200,
+        )
+    else:
+        return jsonify({"success": False, "message": "Failed to delete result."}), 500
+
+
+@app.route("/api/update-marks", methods=["POST"])
+@login_required("teacher")
+def update_marks():
+    data = request.get_json()
+    result_id = data.get("result_id")
+    question_data = data.get("question_data")
+
+    if not all([result_id, question_data]):
+        return jsonify({"success": False, "message": "Missing parameters"}), 400
+
+    if db_results.update_question_marks(result_id, question_data):
+        return jsonify({"success": True, "message": "Marks updated successfully!"}), 200
+    else:
+        return jsonify({"success": False, "message": "Failed to update marks."}), 500
+
+
+@app.route("/download_excel")
+@login_required("teacher")
+def download_excel():
+    all_results = db_results.get_all_results()
+    if not all_results:
+        flash("No data available to download", "error")
+        return redirect(url_for("view_marks"))
+
+    question_part_columns = []
+    if all_results:
+        if all_results[0] and "questions" in all_results[0]:
+            first_result_questions_keys = sorted(
+                all_results[0]["questions"].keys(), key=lambda x: int(x[1:])
+            )
+            for q_num_str in first_result_questions_keys:
+                question_part_columns.extend(
+                    [f"{q_num_str}a", f"{q_num_str}b", f"{q_num_str}c", f"{q_num_str}d"]
+                )
+
+    columns = (
+        [
+            "Roll Number",
+            "Class Year",
+            "Subject",
+            "Exam Type",
+            "Academic Year",
+        ]
+        + question_part_columns
+        + ["Total Marks"]
+    )
+
+    data_for_df = []
+    for result in all_results:
+        row = [
+            result["roll_number"],
+            result["class_year"],
+            result["subject"],
+            result["exam_type"],
+            result["year"],
+        ]
+
+        for q_col in question_part_columns:
+            q_num_str = q_col[:-1]
+            part = q_col[-1]
+            marks = result["questions"].get(q_num_str, {})
+            row.append(marks.get(part, 0.0))
+
+        row.append(result["total_marks"])
+        data_for_df.append(row)
+
+    df = pd.DataFrame(data_for_df, columns=columns)
+
+    os.makedirs(TEMP_FOLDER, exist_ok=True)
+    excel_file_path = os.path.join(TEMP_FOLDER, "results.xlsx")
+    df.to_excel(excel_file_path, index=False)
+
+    return send_file(excel_file_path, as_attachment=True, download_name="results.xlsx")
+
+
+@app.route("/marks_analysis")
+@login_required("teacher")
+def marks_analysis():
+    unique_details = db_results.get_unique_exam_details()
+    class_years = sorted(list(set([d[0] for d in unique_details])))
+    subjects = sorted(list(set([d[1] for d in unique_details])))
+    exam_types = sorted(list(set([d[2] for d in unique_details])))
+
+    return render_template(
+        "marks_analysis.html",
+        class_years=class_years,
+        subjects=subjects,
+        exam_types=exam_types,
+    )
+
+
+@app.route("/get_analysis", methods=["GET"])
+@login_required("teacher")
+def get_analysis():
+    class_year = request.args.get("class_year")
+    subject = request.args.get("subject")
+    exam_type = request.args.get("exam_type")
+
+    if not all([class_year, subject, exam_type]):
+        return jsonify({"error": "Missing filter parameters"}), 400
+
+    teacher_id = session.get("user_id")
+    raw_marks_data = db_results.get_raw_question_marks_for_co_analysis(
+        teacher_id, subject, exam_type, class_year
+    )
+
+    if not raw_marks_data:
+        return (
+            jsonify({"success": False, "message": "No data found for analysis."}),
+            404,
+        )
+
+    total_scores = [sum(row[3:]) for row in raw_marks_data]
+    average_overall = sum(total_scores) / len(total_scores) if total_scores else 0
+
+    question_sums = {}
+    question_counts = {}
+    for _, _, q_num, pa, pb, pc, pd in raw_marks_data:
+        if q_num not in question_sums:
+            question_sums[q_num] = {"a": 0.0, "b": 0.0, "c": 0.0, "d": 0.0}
+            question_counts[q_num] = 0
+        question_sums[q_num]["a"] += pa
+        question_sums[q_num]["b"] += pb
+        question_sums[q_num]["c"] += pc
+        question_sums[q_num]["d"] += pd
+        question_counts[q_num] += 1
+
+    question_analysis = []
+    for q_num in sorted(question_sums.keys()):
+        count = question_counts[q_num]
+        if count > 0:
+            question_analysis.append(
+                {
+                    "question": f"Q{q_num}",
+                    "average_marks": {
+                        "a": round(question_sums[q_num]["a"] / count, 2),
+                        "b": round(question_sums[q_num]["b"] / count, 2),
+                        "c": round(question_sums[q_num]["c"] / count, 2),
+                        "d": round(question_sums[q_num]["d"] / count, 2),
+                    },
+                }
+            )
+
+    co_scores_sum = {}
+    co_max_sum = {}
+    max_marks_per_part = 5.0
+
+    for roll_number, exam_type_db, q_num, pa, pb, pc, pd in raw_marks_data:
+        co = get_course_outcome(exam_type_db, q_num)
+        if co != "N/A":
+            if co not in co_scores_sum:
+                co_scores_sum[co] = 0.0
+                co_max_sum[co] = 0.0
+
+            co_scores_sum[co] += pa + pb + pc + pd
+            co_max_sum[co] += 4 * max_marks_per_part
+
+    co_performance = {}
+    for co, total_obtained in co_scores_sum.items():
+        total_max = co_max_sum[co]
+        if total_max > 0:
+            co_performance[co] = round((total_obtained / total_max) * 100, 2)
+        else:
+            co_performance[co] = 0
+
+    analysis_data = {
+        "average_overall": round(average_overall, 2),
+        "question_analysis": question_analysis,
+        "co_performance": co_performance,
+        "top_performers": [],
+        "needs_improvement": [],
+    }
+
+    return jsonify({"success": True, "data": analysis_data}), 200
+
+
+@app.route("/teacher/add_course", methods=["GET", "POST"])
+@login_required("teacher")
+def add_course_page():
+    if request.method == "POST":
+        course_id = request.form.get("course_id")
+        course_name = request.form.get("course_name")
+        teacher_id = session.get("user_id")
+
+        if not all([course_id, course_name, teacher_id]):
+            flash("Missing course ID or name.", "error")
+            return redirect(url_for("add_course_page"))
+
+        success, message = db.add_course(course_id, course_name, teacher_id)
+        if success:
+            flash(message, "success")
+        else:
+            flash(message, "error")
+        return redirect(url_for("add_course_page"))
+
+    teacher_id = session.get("user_id")
+    courses = db.get_teacher_courses(teacher_id)
+    return render_template("add_course.html", courses=courses)
+
+
+@app.route("/teacher/co-performance")
+@login_required("teacher")
+def teacher_co_performance_page():
+    teacher_id = session.get("user_id")
+    teacher_courses = db.get_teacher_courses(teacher_id)
+    all_exam_types = db_results.get_all_exam_types()
+    all_class_years = db_results.get_all_class_years()
+
+    return render_template(
+        "teacher_co_performance.html",
+        teacher_courses=teacher_courses,
+        exam_types=all_exam_types,
+        class_years=all_class_years,
+    )
+
+
+@app.route("/api/teacher/co-performance-data", methods=["GET"])
+@login_required("teacher")
+def get_teacher_co_performance_data():
+    teacher_id = session.get("user_id")
+    course_id = request.args.get("course_id")
+    exam_type = request.args.get("exam_type")
+    class_year = request.args.get("class_year")
+
+    if not all([course_id, exam_type, class_year]):
+        return (
+            jsonify(
+                {"error": "Missing filter parameters (Course, Exam Type, Class Year)"}
+            ),
+            400,
+        )
+
+    raw_marks_data = db_results.get_raw_question_marks_for_co_analysis(
+        teacher_id, course_id, exam_type, class_year
+    )
+
+    if not raw_marks_data:
+        return (
+            jsonify(
+                {"success": False, "message": "No data found for the selected filters."}
+            ),
+            404,
+        )
+
+    student_co_attainment = {}
+    max_marks_per_part = 5.0
+
+    all_possible_cos = set()
+    for q_num in range(1, 7):
+        co = get_course_outcome(exam_type, q_num)
+        if co != "N/A":
+            all_possible_cos.add(co)
+    sorted_possible_cos = sorted(list(all_possible_cos))
+
+    for co in sorted_possible_cos:
+        for roll_number, exam_type_db, q_num, pa, pb, pc, pd in raw_marks_data:
+            if roll_number not in student_co_attainment:
+                student_co_attainment[roll_number] = {
+                    co: {"obtained": 0.0, "max": 0.0} for co in sorted_possible_cos
+                }
+
+            co_for_question = get_course_outcome(exam_type_db, q_num)
+            if (
+                co_for_question != "N/A"
+                and co_for_question in student_co_attainment[roll_number]
+            ):
+                student_co_attainment[roll_number][co_for_question]["obtained"] += (
+                    pa + pb + pc + pd
+                )
+                student_co_attainment[roll_number][co_for_question]["max"] += (
+                    4 * max_marks_per_part
+                )
+
+    formatted_student_co_data = []
+    for roll, co_data in student_co_attainment.items():
+        student_row = {"roll_number": roll}
+        for co, marks in co_data.items():
+            attainment_percentage = (
+                (marks["obtained"] / marks["max"]) * 100 if marks["max"] > 0 else 0
+            )
+            student_row[co] = round(attainment_percentage, 2)
+        formatted_student_co_data.append(student_row)
+
+    return (
+        jsonify(
+            {
+                "success": True,
+                "co_data": formatted_student_co_data,
+                "co_labels": sorted_possible_cos,
+            }
+        ),
+        200,
     )
 
 
@@ -402,843 +839,98 @@ def logout():
     return redirect(url_for("index"))
 
 
-@app.route("/upload")
-@login_required
-def upload_page():
-    if session.get("user_type") != "teacher":
-        flash("Unauthorized access", "error")
-        return redirect(url_for("index"))
-    return render_template("upload.html")
-
-
-@app.route("/api/analysis")
-@login_required
-def get_analysis():
-    year = request.args.get("year")
-    subject = request.args.get("subject")
-    exam_type = request.args.get("examType")
-
-    if not all([year, subject, exam_type]):
-        return jsonify({"error": "Missing required parameters"}), 400
-
+# --- API Endpoint for Student Analytics ---
+@app.route("/api/student-analytics/<student_id>")
+@login_required("student")
+def get_student_analytics(student_id):
     try:
-        analysis = db_results.get_detailed_analysis(year, subject, exam_type)
-        return jsonify(analysis)
-    except Exception as e:
-        print(f"Analysis error: {str(e)}")
-        return jsonify({"error": "Failed to fetch analysis"}), 500
+        student_detailed_results = db_results.get_student_detailed_results(student_id)
 
-
-def process_files(files):
-    results = []
-    for file in files:
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-            file.save(filepath)
-
-            try:
-                # Extract text from image
-                extracted_result = extract_text_from_image(filepath)
-                print(f"Extracted result: {extracted_result}")
-
-                # Check if extraction was successful
-                if not extracted_result or not isinstance(extracted_result, dict):
-                    print(f"Invalid extraction result from {filename}")
-                    continue
-
-                # Get the extracted text from the result
-                extracted_text = extracted_result.get("text")
-                if not extracted_text:
-                    print(f"No text content extracted from {filename}")
-                    continue
-
-                # Process the extracted text into structured data
-                processed_data = process_text_with_image(extracted_text, filepath)
-
-                if not processed_data:
-                    print(f"Failed to process data from {filename}")
-                    continue
-
-                # Validate the processed data structure
-                if not isinstance(processed_data, dict):
-                    print(f"Invalid data format from {filename}")
-                    continue
-
-                # Ensure required fields exist
-                required_fields = ["roll_number", "questions", "total_marks"]
-                if not all(field in processed_data for field in required_fields):
-                    print(f"Missing required fields in data from {filename}")
-                    continue
-
-                # Validate questions structure
-                questions = processed_data.get("questions", {})
-                if not isinstance(questions, dict):
-                    print(f"Invalid questions format in {filename}")
-                    continue
-
-                # Validate question data structure
-                valid_question = True
-                for q_num in range(1, 7):
-                    q_key = f"Q{q_num}"
-                    if q_key not in questions:
-                        questions[q_key] = {"a": 0, "b": 0, "c": 0, "d": 0}
-                        continue
-
-                    q_data = questions[q_key]
-                    if not isinstance(q_data, dict) or not all(
-                        part in q_data for part in ["a", "b", "c", "d"]
-                    ):
-                        print(f"Invalid format for question {q_key} in {filename}")
-                        valid_question = False
-                        break
-
-                if not valid_question:
-                    continue
-
-                # Add to results if all validation passes
-                results.append(processed_data)
-
-            except Exception as e:
-                print(f"Error processing {filename}: {str(e)}")
-            finally:
-                # Clean up temporary file
-                if os.path.exists(filepath):
-                    os.remove(filepath)
-
-    return results
-
-
-@app.route("/upload-folder", methods=["POST"])
-@login_required
-def upload_folder():
-    if session.get("user_type") != "teacher":
-        return jsonify({"success": False, "message": "Unauthorized access"}), 403
-
-    try:
-        class_year = request.form.get("class")
-        subject = request.form.get("subject")
-        exam_type = request.form.get("examType")
-        academic_year = str(datetime.now().year)
-
-        if not all([class_year, subject, exam_type]):
+        if not student_detailed_results:
             return (
-                jsonify({"success": False, "message": "Missing required fields"}),
-                400,
+                jsonify(
+                    {
+                        "average_score": 0,
+                        "highest_score": 0,
+                        "lowest_score": 0,
+                        "performance_by_subject": {},
+                        "improvement_trend": [],
+                        "co_performance": {},
+                    }
+                ),
+                200,
             )
 
-        results = []
-        files_to_process = []
+        total_scores_list = [r["total_marks"] for r in student_detailed_results]
 
-        # Handle individual file uploads
-        if "files[]" in request.files:
-            files = request.files.getlist("files[]")
-            if files and files[0].filename:
-                files_to_process.extend([f for f in files if allowed_file(f.filename)])
+        average_score = sum(total_scores_list) / len(total_scores_list)
+        highest_score = max(total_scores_list)
+        lowest_score = min(total_scores_list)
 
-        # Handle folder upload
-        if "folder[]" in request.files:
-            folder_files = request.files.getlist("folder[]")
-            if folder_files and folder_files[0].filename:
-                files_to_process.extend(
-                    [f for f in folder_files if allowed_file(f.filename)]
-                )
+        subject_scores = {}
+        subject_counts = {}
+        for result in student_detailed_results:
+            subject = result["subject"]
+            if subject not in subject_scores:
+                subject_scores[subject] = 0.0
+                subject_counts[subject] = 0
+            subject_scores[subject] += result["total_marks"]
+            subject_counts[subject] += 1
 
-        if not files_to_process:
-            return (
-                jsonify({"success": False, "message": "No valid image files found"}),
-                400,
-            )
-
-        # Process all collected files
-        for file in files_to_process:
-            try:
-                filename = secure_filename(file.filename)
-                filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-                file.save(filepath)
-
-                result = process_single_image(filepath)
-                if result:
-                    results.append(result)
-
-                # Clean up the temporary file
-                if os.path.exists(filepath):
-                    os.remove(filepath)
-
-            except Exception as e:
-                print(f"Error processing {file.filename}: {str(e)}")
-                continue
-
-        if not results:
-            return (
-                jsonify({"success": False, "message": "No valid data extracted"}),
-                400,
-            )
-
-        # Save to database
-        db_results.save_results(results, class_year, subject, exam_type, academic_year)
-
-        # Store in session for display
-        session["upload_results"] = results
-
-        return jsonify(
-            {
-                "success": True,
-                "message": f"Successfully processed {len(results)} files",
-                "redirect": url_for("show_results"),
-            }
-        )
-
-    except Exception as e:
-        print(f"Upload error: {str(e)}")
-        return (
-            jsonify({"success": False, "message": f"Error processing files: {str(e)}"}),
-            500,
-        )
-
-
-def process_single_image(file_path):
-    """Process a single image file and return extracted data."""
-    try:
-        # Extract text from image
-        extracted_result = extract_text_from_image(file_path)
-
-        if not extracted_result or not isinstance(extracted_result, dict):
-            print(f"Invalid extraction result from {file_path}")
-            return None
-
-        # Get the extracted text from the result
-        extracted_text = extracted_result.get("text")
-        if not extracted_text:
-            print(f"No text content extracted from {file_path}")
-            return None
-
-        # Process the extracted text into structured data
-        processed_data = process_text_with_image(extracted_text, file_path)
-
-        if not processed_data:
-            print(f"Failed to process data from {file_path}")
-            return None
-
-        return validate_processed_data(processed_data)
-
-    except Exception as e:
-        print(f"Error processing {file_path}: {str(e)}")
-        return None
-
-
-def validate_processed_data(data):
-    """Validate processed data structure."""
-    if not isinstance(data, dict):
-        return None
-
-    # Ensure required fields exist
-    required_fields = ["roll_number", "questions", "total_marks"]
-    if not all(field in data for field in required_fields):
-        return None
-
-    # Validate questions structure
-    questions = data.get("questions", {})
-    if not isinstance(questions, dict):
-        return None
-
-    # Validate question data structure
-    for q_num in range(1, 7):
-        q_key = f"Q{q_num}"
-        if q_key not in questions:
-            questions[q_key] = {"a": 0, "b": 0, "c": 0, "d": 0}
-            continue
-
-        q_data = questions[q_key]
-        if not isinstance(q_data, dict) or not all(
-            part in q_data for part in ["a", "b", "c", "d"]
-        ):
-            return None
-
-        # Validate mark values
-        for part in ["a", "b", "c", "d"]:
-            mark = q_data[part]
-            if not isinstance(mark, (int, float)) or not (0 <= mark <= 8):
-                q_data[part] = 0
-
-    return data
-
-
-def extract_roll_number(text):
-    """Extract roll number from text"""
-    match = re.search(r"Roll No:?\s*([A-Z0-9]+)", text)
-    return match.group(1) if match else "000000000000"
-
-
-def extract_question_marks(text):
-    """Extract question marks from text"""
-    questions = {}
-    for i in range(1, 7):
-        questions[f"Q{i}"] = {"a": 0, "b": 0, "c": 0, "d": 0}
-
-    # Extract marks using regex
-    pattern = r"Q(\d+)[:\s]+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)"
-    matches = re.finditer(pattern, text)
-
-    for match in matches:
-        q_num = match.group(1)
-        if 1 <= int(q_num) <= 6:
-            questions[f"Q{q_num}"] = {
-                "a": float(match.group(2)),
-                "b": float(match.group(3)),
-                "c": float(match.group(4)),
-                "d": float(match.group(5)),
-            }
-
-    return questions
-
-
-def calculate_total_marks(text):
-    """Calculate total marks from text"""
-    match = re.search(r"Total[:\s]+(\d+)", text)
-    return float(match.group(1)) if match else 0
-
-
-def get_or_create_subject(subject_name, class_name, academic_year):
-    """Helper function to get or create subject ID"""
-    with db.get_connection() as conn:
-        cursor = conn.cursor()
-
-        # Get or create class
-        cursor.execute(
-            """
-            SELECT id FROM classes 
-            WHERE year = ? AND academic_year = ?
-        """,
-            (class_name, academic_year),
-        )
-
-        class_result = cursor.fetchone()
-        if class_result:
-            class_id = class_result[0]
-        else:
-            cursor.execute(
-                """
-                INSERT INTO classes (year, department, academic_year)
-                VALUES (?, ?, ?)
-            """,
-                (class_name, "DEFAULT", academic_year),
-            )
-            class_id = cursor.lastrowid
-
-        # Get or create subject
-        cursor.execute(
-            """
-            SELECT id FROM subjects 
-            WHERE name = ? AND class_id = ?
-        """,
-            (subject_name, class_id),
-        )
-
-        subject_result = cursor.fetchone()
-        if subject_result:
-            return subject_result[0]
-
-        cursor.execute(
-            """
-            INSERT INTO subjects (name, class_id, teacher_id)
-            VALUES (?, ?, ?)
-        """,
-            (subject_name, class_id, session.get("user_id")),
-        )
-
-        return cursor.lastrowid
-
-
-@app.route("/results")
-@login_required
-def show_results():
-    if session.get("user_type") != "teacher":
-        flash("Unauthorized access", "error")
-        return redirect(url_for("index"))
-
-    # Get results from session
-    json_data = session.get("upload_results", [])
-
-    return render_template("results.html", json_data=json_data)
-
-
-@app.route("/delete_last", methods=["POST"])
-@login_required
-def delete_last():
-    if session.get("user_type") != "teacher":
-        return jsonify({"success": False, "message": "Unauthorized access"}), 403
-
-    json_data = session.get("upload_results", [])
-
-    if not json_data:
-        return jsonify({"success": False, "message": "No entries to delete"}), 400
-
-    # Remove the last entry
-    json_data.pop()
-    session["upload_results"] = json_data
-
-    return jsonify({"success": True, "message": "Last entry deleted successfully"})
-
-
-@app.route("/download_excel")
-@login_required
-def download_excel():
-    if session.get("user_type") != "teacher":
-        flash("Unauthorized access", "error")
-        return redirect(url_for("index"))
-
-    json_data = session.get("upload_results", [])
-
-    if not json_data:
-        flash("No data available to download", "error")
-        return redirect(url_for("show_results"))
-
-    # Create a DataFrame from the JSON data
-    rows = []
-    for entry in json_data:
-        row = {
-            "Roll Number": entry.get("roll_number", ""),
+        performance_by_subject = {
+            subj: round(subject_scores[subj] / subject_counts[subj], 2)
+            for subj in subject_scores
         }
 
-        # Add question marks
-        for q_num in range(1, 7):
-            q_key = f"Q{q_num}"
-            if q_key in entry.get("questions", {}):
-                q_data = entry["questions"][q_key]
-                row[f"{q_key}a"] = q_data.get("a", 0)
-                row[f"{q_key}b"] = q_data.get("b", 0)
-                row[f"{q_key}c"] = q_data.get("c", 0)
-                row[f"{q_key}d"] = q_data.get("d", 0)
+        improvement_trend = []
+        for result in student_detailed_results:
+            label = f"{result['subject']} ({result['exam_type']} {result['year']})"
+            improvement_trend.append({"label": label, "score": result["total_marks"]})
+
+        student_co_attainment = {}
+        max_marks_per_part = 5.0
+
+        all_possible_student_cos = set()
+        for result in student_detailed_results:
+            exam_type_for_co = result["exam_type"]
+            for q_num_str in result["questions"]:
+                q_num = int(q_num_str.replace("Q", ""))
+                co = get_course_outcome(exam_type_for_co, q_num)
+                if co != "N/A":
+                    all_possible_student_cos.add(co)
+        sorted_student_cos = sorted(list(all_possible_student_cos))
+
+        for co_label in sorted_student_cos:  # Initialize for all possible COs
+            student_co_attainment[co_label] = {"obtained": 0.0, "max": 0.0}
+
+        for result in student_detailed_results:
+            exam_type_for_co = result["exam_type"]
+            for q_key, parts_data in result["questions"].items():
+                question_number = int(q_key.replace("Q", ""))
+                co = get_course_outcome(exam_type_for_co, question_number)
+                if co != "N/A" and co in student_co_attainment:
+                    student_co_attainment[co]["obtained"] += sum(parts_data.values())
+                    student_co_attainment[co]["max"] += 4 * max_marks_per_part
+
+        co_performance_percentages = {}
+        for co, marks_data in student_co_attainment.items():
+            if marks_data["max"] > 0:
+                co_performance_percentages[co] = round(
+                    (marks_data["obtained"] / marks_data["max"]) * 100, 2
+                )
             else:
-                row[f"{q_key}a"] = 0
-                row[f"{q_key}b"] = 0
-                row[f"{q_key}c"] = 0
-                row[f"{q_key}d"] = 0
+                co_performance_percentages[co] = 0.0
 
-        row["Total"] = entry.get("total_marks", 0)
-        rows.append(row)
+        analytics = {
+            "average_score": round(average_score, 1),
+            "highest_score": round(highest_score, 1),
+            "lowest_score": round(lowest_score, 1),
+            "performance_by_subject": performance_by_subject,
+            "improvement_trend": improvement_trend,
+            "co_performance": co_performance_percentages,
+        }
 
-    df = pd.DataFrame(rows)
-
-    # Create Excel file
-    excel_file = os.path.join(app.config["UPLOAD_FOLDER"], "results.xlsx")
-    df.to_excel(excel_file, index=False)
-
-    # Return the file for download
-    return send_file(excel_file, as_attachment=True)
-
-
-@app.route("/marks-analysis")
-@login_required
-def marks_analysis():
-    if session.get("user_type") != "teacher":
-        flash("Unauthorized access", "error")
-        return redirect(url_for("index"))
-
-    with db.get_connection() as conn:
-        cursor = conn.cursor()
-
-        # Get all classes from the classes table
-        cursor.execute(
-            """
-            SELECT DISTINCT c.year, c.academic_year 
-            FROM classes c
-            ORDER BY c.academic_year DESC, c.year
-        """
-        )
-        class_years = [f"{row[0]} ({row[1]})" for row in cursor.fetchall()]
-
-        # Get all subjects from the subjects table
-        cursor.execute(
-            """
-            SELECT DISTINCT s.name 
-            FROM subjects s
-            JOIN classes c ON s.class_id = c.id
-            ORDER BY s.name
-        """
-        )
-        all_subjects = [row[0] for row in cursor.fetchall()]
-
-    with db_results.get_connection() as conn:
-        cursor = conn.cursor()
-
-        # Get all unique class years from results
-        cursor.execute(
-            """
-            SELECT DISTINCT class_year 
-            FROM students_results 
-            ORDER BY class_year
-        """
-        )
-        result_years = [row[0] for row in cursor.fetchall()]
-
-        # Get all unique subjects from results
-        cursor.execute(
-            """
-            SELECT DISTINCT subject 
-            FROM students_results 
-            ORDER BY subject
-        """
-        )
-        result_subjects = [row[0] for row in cursor.fetchall()]
-
-        # Get all unique exam types
-        cursor.execute(
-            """
-            SELECT DISTINCT exam_type 
-            FROM students_results 
-            ORDER BY exam_type
-        """
-        )
-        exam_types = [row[0] for row in cursor.fetchall()]
-
-        # Get summary statistics for each class and subject
-        cursor.execute(
-            """
-            SELECT 
-                class_year,
-                subject,
-                exam_type,
-                COUNT(*) as total_students,
-                AVG(total_marks) as avg_marks,
-                MAX(total_marks) as max_marks,
-                MIN(total_marks) as min_marks,
-                COUNT(CASE WHEN total_marks >= 20 THEN 1 END) as passed_count
-            FROM students_results
-            GROUP BY class_year, subject, exam_type
-            ORDER BY class_year, subject, exam_type
-        """
-        )
-
-        class_stats = {}
-        for row in cursor.fetchall():
-            if row[0] not in class_stats:
-                class_stats[row[0]] = {}
-            if row[1] not in class_stats[row[0]]:
-                class_stats[row[0]][row[1]] = {}
-
-            total_students = row[3]
-            class_stats[row[0]][row[1]][row[2]] = {
-                "total_students": total_students,
-                "avg_marks": round(row[4], 2) if row[4] else 0,
-                "max_marks": row[5],
-                "min_marks": row[6],
-                "pass_percentage": (
-                    round((row[7] / total_students * 100), 2)
-                    if total_students > 0
-                    else 0
-                ),
-            }
-
-    # Combine years and subjects from both databases
-    years = sorted(set(class_years + result_years))
-    subjects = sorted(set(all_subjects + result_subjects))
-
-    return render_template(
-        "marks_analysis.html",
-        teacher_name=session.get("full_name"),
-        years=years,
-        subjects=subjects,
-        exam_types=exam_types,
-        class_stats=class_stats,
-    )
-
-
-@app.route("/view_marks")
-@login_required
-def view_marks():
-    if session.get("user_type") != "teacher":
-        flash("Unauthorized access", "error")
-        return redirect(url_for("index"))
-
-    # Get available class years and exam types
-    try:
-        conn = sqlite3.connect("./database/exam_results.db")
-        cursor = conn.cursor()
-
-        # Get distinct class years
-        cursor.execute("SELECT DISTINCT class_year FROM students_results")
-        years = [row[0] for row in cursor.fetchall()]
-
-        # Get distinct exam types
-        cursor.execute("SELECT DISTINCT exam_type FROM students_results")
-        exam_types = [row[0] for row in cursor.fetchall()]
-
-        conn.close()
-
-        return render_template("view_marks.html", years=years, exam_types=exam_types)
-
+        return jsonify(analytics), 200
     except Exception as e:
-        print(f"Error loading view marks page: {str(e)}")
-        flash(f"Error: {str(e)}", "error")
-        return redirect(url_for("teacher_dashboard"))
-
-
-@app.route("/api/view-marks")
-@login_required
-def api_view_marks():
-    if session.get("user_type") != "teacher":
-        return jsonify({"error": "Unauthorized access"}), 403
-
-    # Get query parameters
-    class_year = request.args.get("year")
-    subject = request.args.get("subject")
-    exam_type = request.args.get("examType")
-
-    if not all([class_year, subject, exam_type]):
-        return jsonify({"error": "Missing required parameters"}), 400
-
-    try:
-        # Connect to the database
-        conn = sqlite3.connect("./database/exam_results.db")
-        cursor = conn.cursor()
-
-        # Get all results matching the criteria
-        cursor.execute(
-            """
-            SELECT sr.id, sr.roll_number, sr.subject, sr.total_marks
-            FROM students_results sr
-            WHERE sr.class_year = ? AND sr.subject = ? AND sr.exam_type = ?
-            ORDER BY sr.roll_number
-            """,
-            (class_year, subject, exam_type),
-        )
-
-        results = []
-        for row in cursor.fetchall():
-            result_id, roll_number, subject_name, total_marks = row
-
-            # Get question marks for this result
-            cursor.execute(
-                """
-                SELECT question_number, part_a, part_b, part_c, part_d
-                FROM question_marks
-                WHERE result_id = ?
-                ORDER BY question_number
-                """,
-                (result_id,),
-            )
-
-            questions = {}
-            for q_row in cursor.fetchall():
-                q_num, part_a, part_b, part_c, part_d = q_row
-                questions[f"Q{q_num}"] = {
-                    "a": part_a,
-                    "b": part_b,
-                    "c": part_c,
-                    "d": part_d,
-                }
-
-            # Fill in missing questions with zeros
-            for i in range(1, 7):
-                if f"Q{i}" not in questions:
-                    questions[f"Q{i}"] = {"a": 0, "b": 0, "c": 0, "d": 0}
-
-            results.append(
-                {
-                    "roll_number": roll_number,
-                    "subject": subject_name,
-                    "total_marks": total_marks,
-                    "questions": questions,
-                }
-            )
-
-        conn.close()
-        return jsonify(results)
-
-    except Exception as e:
-        print(f"Error fetching marks: {str(e)}")
+        print(f"Error in student analytics: {e}")
         return jsonify({"error": str(e)}), 500
-
-
-@app.route("/api/update-marks", methods=["POST"])
-@login_required
-def api_update_marks():
-    if session.get("user_type") != "teacher":
-        return jsonify({"success": False, "message": "Unauthorized access"}), 403
-
-    try:
-        data = request.json
-
-        # Validate required fields
-        required_fields = [
-            "roll_number",
-            "class_year",
-            "subject",
-            "exam_type",
-            "questions",
-            "total_marks",
-        ]
-        if not all(field in data for field in required_fields):
-            return (
-                jsonify({"success": False, "message": "Missing required fields"}),
-                400,
-            )
-
-        # Update the marks in the database
-        success, message = db_results.update_result(
-            data["roll_number"],
-            data["class_year"],
-            data["subject"],
-            data["exam_type"],
-            data["questions"],
-            data["total_marks"],
-        )
-
-        return jsonify({"success": success, "message": message})
-
-    except Exception as e:
-        print(f"Error updating marks: {str(e)}")
-        return jsonify({"success": False, "message": str(e)}), 500
-
-
-@app.route("/api/delete-marks", methods=["POST"])
-@login_required
-def api_delete_marks():
-    if session.get("user_type") != "teacher":
-        return jsonify({"success": False, "message": "Unauthorized access"}), 403
-
-    try:
-        data = request.json
-
-        # Validate required fields
-        required_fields = ["roll_number", "class_year", "subject", "exam_type"]
-        if not all(field in data for field in required_fields):
-            return (
-                jsonify({"success": False, "message": "Missing required fields"}),
-                400,
-            )
-
-        # Delete the result from the database
-        success, message = db_results.delete_result(
-            data["roll_number"], data["class_year"], data["subject"], data["exam_type"]
-        )
-
-        return jsonify({"success": success, "message": message})
-
-    except Exception as e:
-        print(f"Error deleting marks: {str(e)}")
-        return jsonify({"success": False, "message": str(e)}), 500
-
-
-@app.route("/api/download-marks")
-@login_required
-def api_download_marks():
-    if session.get("user_type") != "teacher":
-        return jsonify({"error": "Unauthorized access"}), 403
-
-    # Get query parameters
-    class_year = request.args.get("year")
-    subject = request.args.get("subject")
-    exam_type = request.args.get("examType")
-
-    if not all([class_year, subject, exam_type]):
-        return jsonify({"error": "Missing required parameters"}), 400
-
-    try:
-        # Get marks data
-        response = api_view_marks()
-        if isinstance(response, tuple):
-            return response
-
-        marks_data = response.json
-
-        # Create Excel file
-        import pandas as pd
-        from io import BytesIO
-
-        # Prepare data for Excel
-        excel_data = []
-        for entry in marks_data:
-            row = {
-                "Roll Number": entry["roll_number"],
-                "Subject": entry["subject"],
-                "Total Marks": entry["total_marks"],
-            }
-
-            # Add question marks
-            for q_num in range(1, 7):
-                q_key = f"Q{q_num}"
-                if q_key in entry["questions"]:
-                    q_data = entry["questions"][q_key]
-                    row[f"{q_key}_a"] = q_data["a"]
-                    row[f"{q_key}_b"] = q_data["b"]
-                    row[f"{q_key}_c"] = q_data["c"]
-                    row[f"{q_key}_d"] = q_data["d"]
-                else:
-                    row[f"{q_key}_a"] = 0
-                    row[f"{q_key}_b"] = 0
-                    row[f"{q_key}_c"] = 0
-                    row[f"{q_key}_d"] = 0
-
-            excel_data.append(row)
-
-        # Create DataFrame and Excel file
-        df = pd.DataFrame(excel_data)
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine="openpyxl") as writer:
-            df.to_excel(writer, index=False, sheet_name="Marks")
-
-        output.seek(0)
-
-        # Generate filename
-        filename = f"{subject}_{exam_type}_{class_year}_marks.xlsx"
-
-        return send_file(
-            output,
-            as_attachment=True,
-            download_name=filename,
-            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        )
-
-    except Exception as e:
-        print(f"Error generating Excel: {str(e)}")
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/insert_test_data_for_student/<roll_number>")
-@login_required
-def insert_test_data_for_student(roll_number):
-    if session.get("user_type") != "teacher":
-        flash("Unauthorized access", "error")
-        return redirect(url_for("index"))
-
-    try:
-        # Insert test data for the student
-        success = db_results.insert_test_marks(roll_number)
-
-        if success:
-            flash(
-                f"Test data inserted successfully for student {roll_number}", "success"
-            )
-        else:
-            flash(f"Failed to insert test data for student {roll_number}", "error")
-
-        return redirect(url_for("teacher_dashboard"))
-    except Exception as e:
-        flash(f"Error: {str(e)}", "error")
-        return redirect(url_for("teacher_dashboard"))
-
-
-@app.route("/api/student_data/<roll_number>")
-@login_required
-def api_student_data(roll_number):
-    if session.get("user_type") != "teacher":
-        return jsonify({"error": "Unauthorized access"}), 403
-
-    try:
-        # Get student's marks and analysis
-        student_results = db_results.get_student_results(roll_number)
-
-        if not student_results:
-            return jsonify({"error": "No data found for student"}), 404
-
-        # Return the raw data
-        return jsonify(student_results)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-if __name__ == "__main__":
-    app.run(debug=True)

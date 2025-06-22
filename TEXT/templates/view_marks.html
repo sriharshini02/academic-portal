@@ -38,160 +38,179 @@
       }
 
       .filter-controls {
-        background: rgba(30, 41, 59, 0.8);
-        padding: 1rem;
-        border-radius: 0.8rem;
+        background: #2d3748;
+        padding: 1.5rem;
+        border-radius: 8px;
         margin-bottom: 2rem;
         display: flex;
-        gap: 1rem;
-        align-items: center;
         flex-wrap: wrap;
+        gap: 1rem;
+        align-items: flex-end;
       }
 
-      .filter-controls select {
-        background: rgba(30, 41, 59, 0.8);
-        color: white;
-        border: 1px solid rgba(139, 92, 246, 0.2);
-        padding: 0.5rem;
-        border-radius: 0.5rem;
+      .filter-group {
+        display: flex;
+        flex-direction: column;
         min-width: 150px;
       }
 
-      .button-group {
-        display: flex;
-        gap: 1rem;
-        margin-left: auto;
+      .filter-group label {
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        color: #a0aec0;
       }
 
-      .view-btn,
-      .download-btn {
+      .filter-group select,
+      .filter-group input[type="text"] {
+        padding: 0.75rem;
+        border-radius: 4px;
+        border: 1px solid #4a5568;
+        background: #1a202c;
+        color: white;
+        font-size: 1rem;
+      }
+
+      .filter-group select:focus,
+      .filter-group input[type="text"]:focus {
+        outline: none;
+        border-color: #8b5cf6;
+        box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.5);
+      }
+
+      .filter-group button {
+        padding: 0.75rem 1.5rem;
         background: #8b5cf6;
         color: white;
         border: none;
-        padding: 0.5rem 1.5rem;
-        border-radius: 0.5rem;
+        border-radius: 4px;
         cursor: pointer;
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
+        font-size: 1rem;
+        transition: background-color 0.3s ease;
       }
 
-      .download-btn {
-        background: #10b981;
+      .filter-group button:hover {
+        background: #7c3aed;
       }
 
-      .view-btn:hover,
-      .download-btn:hover {
-        opacity: 0.9;
-        transform: translateY(-2px);
-      }
-
-      .view-btn:disabled,
-      .download-btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        transform: none;
+      .marks-table-container {
+        background: #2d3748;
+        padding: 1.5rem;
+        border-radius: 8px;
+        overflow-x: auto;
       }
 
       .marks-table {
         width: 100%;
         border-collapse: collapse;
         margin-top: 1rem;
-        background: rgba(30, 41, 59, 0.8);
-        border-radius: 0.8rem;
-        overflow: hidden;
+        white-space: nowrap; /* Prevent wrapping of table content */
       }
 
       .marks-table th,
       .marks-table td {
-        padding: 0.75rem;
+        padding: 0.8rem 1rem;
         text-align: left;
-        border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+        border-bottom: 1px solid #4a5568;
       }
 
       .marks-table th {
-        background: #8b5cf6;
-        color: white;
+        background: #1a202c;
+        color: #a0aec0;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
       }
 
-      .marks-table td input {
-        background: rgba(30, 41, 59, 0.5);
-        border: 1px solid rgba(139, 92, 246, 0.2);
+      .marks-table td {
+        color: #e2e8f0;
+        font-size: 0.95rem;
+      }
+
+      .marks-table tbody tr:hover {
+        background: #3a475a;
+      }
+
+      .marks-table input[type="number"] {
+        width: 60px; /* Adjust width as needed */
+        padding: 5px;
+        background: #1a202c;
+        border: 1px solid #4a5568;
+        border-radius: 4px;
         color: white;
-        padding: 0.25rem;
-        border-radius: 0.25rem;
-        width: 50px;
         text-align: center;
       }
 
-      .marks-table td input:focus {
-        outline: none;
-        border-color: #8b5cf6;
+      .marks-table .total-marks-display {
+        background: none;
+        border: none;
+        font-weight: bold;
+        color: #8b5cf6;
       }
 
-      .action-buttons {
+      /* Actions column styling */
+      .actions {
         display: flex;
         gap: 0.5rem;
       }
 
-      .edit-btn,
-      .delete-btn,
-      .save-btn,
-      .cancel-btn {
-        padding: 0.25rem 0.5rem;
+      .actions button {
+        padding: 0.5rem 0.8rem;
+        border-radius: 4px;
         border: none;
-        border-radius: 0.25rem;
         cursor: pointer;
-        transition: all 0.3s ease;
         font-size: 0.9rem;
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
+        transition: background-color 0.2s ease;
       }
 
       .edit-btn {
-        background: #10b981;
+        background: #34d399; /* Green */
         color: white;
       }
-
-      .delete-btn {
-        background: #ef4444;
-        color: white;
+      .edit-btn:hover {
+        background: #10b981;
       }
 
       .save-btn {
-        background: #3b82f6;
+        background: #60a5fa; /* Blue */
         color: white;
+      }
+      .save-btn:hover {
+        background: #3b82f6;
       }
 
       .cancel-btn {
-        background: #6b7280;
+        background: #f87171; /* Red */
         color: white;
       }
-
-      .edit-btn:hover,
-      .delete-btn:hover,
-      .save-btn:hover,
       .cancel-btn:hover {
-        transform: translateY(-2px);
-        opacity: 0.9;
+        background: #ef4444;
       }
 
-      .editing {
-        background: rgba(139, 92, 246, 0.1);
+      .delete-btn {
+        background: #ef4444; /* Red */
+        color: white;
+      }
+      .delete-btn:hover {
+        background: #dc2626;
       }
 
-      @media (max-width: 768px) {
-        .dashboard-container {
-          grid-template-columns: 1fr;
-        }
-        .filter-controls {
-          flex-direction: column;
-        }
-        .filter-controls select {
-          width: 100%;
-        }
+      /* Row editing state */
+      .marks-table tr.editing input[type="number"]:not(.total-marks-display) {
+        pointer-events: auto; /* Enable input for editing */
+        opacity: 1;
+      }
+
+      .marks-table
+        tr:not(.editing)
+        input[type="number"]:not(.total-marks-display) {
+        pointer-events: none; /* Disable input when not editing */
+        opacity: 0.8;
+      }
+
+      /* Initially hide save/cancel buttons */
+      .marks-table .save-btn,
+      .marks-table .cancel-btn {
+        display: none;
       }
     </style>
   </head>
@@ -200,235 +219,276 @@
       {% include 'sidebar.html' %}
 
       <main class="main-content">
+        <h1>View Marks</h1>
+
         <div class="filter-controls">
-          <select id="yearFilter">
-            <option value="">Select Year</option>
-            {% for year in years %}
-            <option value="{{ year }}">{{ year }}</option>
-            {% endfor %}
-          </select>
-          <select id="subjectFilter">
-            <option value="">Select Subject</option>
-            <option value="java">Java</option>
-            <option value="python">Python</option>
-          </select>
-          <select id="examTypeFilter">
-            <option value="">Select Exam</option>
-            {% for exam_type in exam_types %}
-            <option value="{{ exam_type }}">{{ exam_type }}</option>
-            {% endfor %}
-          </select>
-          <div class="button-group">
-            <button class="view-btn" onclick="viewMarks()">
-              <i class="fas fa-search"></i> View Marks
-            </button>
-            <button
-              class="download-btn"
-              onclick="downloadExcel()"
-              id="downloadBtn"
-              disabled
-            >
-              <i class="fas fa-file-excel"></i> Download Excel
-            </button>
+          <div class="filter-group">
+            <label for="classYearSelect">Class Year:</label>
+            <select id="classYearSelect">
+              <option value="">Select Year</option>
+              {% for year in class_years %}
+              <option value="{{ year }}">{{ year }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="subjectSelect">Subject:</label>
+            <select id="subjectSelect">
+              <option value="">Select Subject</option>
+              {% for subject_name in subjects %}
+              <option value="{{ subject_name }}">{{ subject_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="examTypeSelect">Exam Type:</label>
+            <select id="examTypeSelect">
+              <option value="">Select Exam</option>
+              {% for exam_type_name in exam_types %}
+              <option value="{{ exam_type_name }}">{{ exam_type_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="filter-group">
+            <button onclick="viewMarks()">Apply Filters</button>
           </div>
         </div>
 
-        <div id="marksTableContainer"></div>
+        <div class="marks-table-container">
+          <div
+            id="loadingMessage"
+            style="display: none; text-align: center; color: #a0aec0"
+          >
+            Loading marks...
+          </div>
+          <table class="marks-table">
+            <thead>
+              <tr id="marksTableHeader">
+                <th>Roll No</th>
+                <!-- Dynamic question headers will be inserted here by JS -->
+                <th>Total Marks</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="marksTableBody">
+              <!-- Marks data will be loaded here by JavaScript -->
+              <tr>
+                <td colspan="9" style="text-align: center">
+                  Select filters and click "Apply Filters" to view marks.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </main>
     </div>
 
     <script>
-      let currentYear, currentSubject, currentExamType;
-      const downloadBtn = document.getElementById("downloadBtn");
+      let currentClassYear = "";
+      let currentSubject = "";
+      let currentExamType = "";
+
+      document.addEventListener("DOMContentLoaded", () => {
+        // Set initial values from local storage if available, or defaults
+        currentClassYear = localStorage.getItem("viewMarksClassYear") || "";
+        currentSubject = localStorage.getItem("viewMarksSubject") || "";
+        currentExamType = localStorage.getItem("viewMarksExamType") || "";
+
+        document.getElementById("classYearSelect").value = currentClassYear;
+        document.getElementById("subjectSelect").value = currentSubject;
+        document.getElementById("examTypeSelect").value = currentExamType;
+
+        // Automatically load marks if all filters are set from previous session
+        if (currentClassYear && currentSubject && currentExamType) {
+          viewMarks();
+        }
+      });
 
       function viewMarks() {
-        currentYear = document.getElementById("yearFilter").value;
-        currentSubject = document.getElementById("subjectFilter").value;
-        currentExamType = document.getElementById("examTypeFilter").value;
+        currentClassYear = document.getElementById("classYearSelect").value;
+        currentSubject = document.getElementById("subjectSelect").value;
+        currentExamType = document.getElementById("examTypeSelect").value;
 
-        if (!currentYear || !currentSubject || !currentExamType) {
-          alert("Please select all filters");
+        // Save current selections to local storage
+        localStorage.setItem("viewMarksClassYear", currentClassYear);
+        localStorage.setItem("viewMarksSubject", currentSubject);
+        localStorage.setItem("viewMarksExamType", currentExamType);
+
+        const marksTableBody = document.getElementById("marksTableBody");
+        const marksTableHeader = document.getElementById("marksTableHeader");
+        const loadingMessage = document.getElementById("loadingMessage");
+
+        marksTableBody.innerHTML = ""; // Clear existing data
+        marksTableHeader.innerHTML =
+          "<th>Roll No</th><th>Total Marks</th><th>Actions</th>"; // Reset header
+        loadingMessage.style.display = "block"; // Show loading message
+
+        if (!currentClassYear || !currentSubject || !currentExamType) {
+          marksTableBody.innerHTML =
+            '<tr><td colspan="20" style="text-align: center;">Please select all filters.</td></tr>';
+          loadingMessage.style.display = "none";
           return;
         }
 
         fetch(
-          `/api/view-marks?year=${currentYear}&subject=${currentSubject}&examType=${currentExamType}`
+          `/api/get_marks?class_year=${currentClassYear}&subject=${currentSubject}&exam_type=${currentExamType}`
         )
           .then((response) => response.json())
           .then((data) => {
-            displayMarks(data);
-            downloadBtn.disabled = data.length === 0;
+            loadingMessage.style.display = "none"; // Hide loading message
+            if (data.success && data.results.length > 0) {
+              // Dynamically build table headers
+              marksTableHeader.innerHTML = ""; // Clear existing headers
+              marksTableHeader.innerHTML += "<th>Roll No</th>";
+
+              // Add question headers (Q1a, Q1b, etc.) including CO for each question
+              if (data.results[0] && data.results[0].questions) {
+                // Get sorted question keys (Q1, Q2, etc.)
+                const qKeys = Object.keys(data.results[0].questions).sort(
+                  (a, b) => {
+                    return parseInt(a.substring(1)) - parseInt(b.substring(1));
+                  }
+                );
+
+                qKeys.forEach((qKey) => {
+                  marksTableHeader.innerHTML += `<th>${qKey}a</th><th>${qKey}b</th><th>${qKey}c</th><th>${qKey}d</th><th>${qKey} CO</th>`;
+                });
+              }
+
+              marksTableHeader.innerHTML += "<th>Total Marks</th>";
+              marksTableHeader.innerHTML += "<th>Actions</th>";
+
+              data.results.forEach((result) => {
+                let rowHtml = `
+                    <tr data-roll="${result.roll_number}" data-result-id="${result.id}">
+                        <td>${result.roll_number}</td>
+                `;
+
+                // Get sorted question keys for this student (Q1, Q2, etc.)
+                const studentQKeys = Object.keys(result.questions).sort(
+                  (a, b) => {
+                    return parseInt(a.substring(1)) - parseInt(b.substring(1));
+                  }
+                );
+
+                studentQKeys.forEach((qKey) => {
+                  const qData = result.questions[qKey];
+                  // Ensure marks are numbers, default to 0 if null/undefined
+                  const part_a =
+                    qData.a !== null && qData.a !== undefined ? qData.a : 0;
+                  const part_b =
+                    qData.b !== null && qData.b !== undefined ? qData.b : 0;
+                  const part_c =
+                    qData.c !== null && qData.c !== undefined ? qData.c : 0;
+                  const part_d =
+                    qData.d !== null && qData.d !== undefined ? qData.d : 0;
+                  const co_value = qData.co || "N/A"; // Use 'N/A' if CO is not provided
+
+                  rowHtml += `
+                        <td><input type="number" value="${part_a}" min="0" max="5" step="0.1" class="q-mark" data-part="a" data-q="${qKey}" readonly></td>
+                        <td><input type="number" value="${part_b}" min="0" max="5" step="0.1" class="q-mark" data-part="b" data-q="${qKey}" readonly></td>
+                        <td><input type="number" value="${part_c}" min="0" max="5" step="0.1" class="q-mark" data-part="c" data-q="${qKey}" readonly></td>
+                        <td><input type="number" value="${part_d}" min="0" max="5" step="0.1" class="q-mark" data-part="d" data-q="${qKey}" readonly></td>
+                        <td><span class="co-display">${co_value}</span></td>
+                    `;
+                });
+
+                rowHtml += `
+                        <td><input type="number" value="${result.total_marks}" readonly class="total-marks-display"></td>
+                        <td>
+                            <div class="actions">
+                                <button onclick="editRow(this)" class="edit-btn"><i class="fas fa-edit"></i> Edit</button>
+                                <button onclick="saveEdit(this)" class="save-btn" style="display:none;"><i class="fas fa-save"></i> Save</button>
+                                <button onclick="cancelEdit(this)" class="cancel-btn" style="display:none;"><i class="fas fa-times"></i> Cancel</button>
+                                <button onclick="deleteRow(this)" class="delete-btn"><i class="fas fa-trash"></i> Delete</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                marksTableBody.innerHTML += rowHtml;
+              });
+
+              // Add event listeners for mark changes to update total
+              marksTableBody.querySelectorAll(".q-mark").forEach((input) => {
+                input.addEventListener("input", updateTotalMarks);
+              });
+            } else {
+              marksTableBody.innerHTML =
+                '<tr><td colspan="20" style="text-align: center;">No marks found for the selected filters.</td></tr>';
+            }
           })
           .catch((error) => {
-            console.error("Error:", error);
-            alert("Error fetching marks data");
+            loadingMessage.style.display = "none";
+            console.error("Error fetching marks:", error);
+            marksTableBody.innerHTML =
+              '<tr><td colspan="20" style="text-align: center; color: #ef4444;">Error loading marks. Please try again.</td></tr>';
           });
       }
 
-      function downloadExcel() {
-        if (!currentYear || !currentSubject || !currentExamType) {
-          alert("Please view marks before downloading");
-          return;
-        }
-
-        window.location.href = `/api/download-marks?year=${currentYear}&subject=${currentSubject}&examType=${currentExamType}`;
-      }
-
-      function displayMarks(data) {
-        const container = document.getElementById("marksTableContainer");
-        let html = `
-          <table class="marks-table">
-            <thead>
-              <tr>
-                <th>Roll Number</th>
-                <th>Subject</th>
-                ${Array.from(
-                  { length: 6 },
-                  (_, i) => `
-                  <th colspan="4">Q${i + 1}</th>
-                `
-                ).join("")}
-                <th>Total</th>
-                <th>Actions</th>
-              </tr>
-              <tr>
-                <th></th>
-                <th></th>
-                ${Array.from(
-                  { length: 6 },
-                  () => `
-                  <th>a</th>
-                  <th>b</th>
-                  <th>c</th>
-                  <th>d</th>
-                `
-                ).join("")}
-                <th></th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-        `;
-
-        data.forEach((entry) => {
-          html += `
-            <tr data-roll="${entry.roll_number}">
-              <td>${entry.roll_number}</td>
-              <td>${entry.subject}</td>
-          `;
-
-          // Add question marks
-          for (let q = 1; q <= 6; q++) {
-            const qData = entry.questions[`Q${q}`] || {
-              a: 0,
-              b: 0,
-              c: 0,
-              d: 0,
-            };
-            html += `
-              <td><input type="number" min="0" max="8" value="${qData.a}" disabled data-q="${q}" data-part="a"></td>
-              <td><input type="number" min="0" max="8" value="${qData.b}" disabled data-q="${q}" data-part="b"></td>
-              <td><input type="number" min="0" max="8" value="${qData.c}" disabled data-q="${q}" data-part="c"></td>
-              <td><input type="number" min="0" max="8" value="${qData.d}" disabled data-q="${q}" data-part="d"></td>
-            `;
-          }
-
-          html += `
-              <td>${entry.total_marks}</td>
-              <td class="action-buttons">
-                <button class="edit-btn" onclick="editRow(this)">
-                  <i class="fas fa-edit"></i> Edit
-                </button>
-                <button class="delete-btn" onclick="deleteRow(this)">
-                  <i class="fas fa-trash"></i> Delete
-                </button>
-              </td>
-            </tr>
-          `;
+      function updateTotalMarks(event) {
+        const row = event.target.closest("tr");
+        let rowTotal = 0;
+        row.querySelectorAll(".q-mark").forEach((input) => {
+          rowTotal += parseFloat(input.value) || 0;
         });
-
-        html += "</tbody></table>";
-        container.innerHTML = html;
+        row.querySelector(".total-marks-display").value = rowTotal.toFixed(1); // Keep one decimal place
       }
 
       function editRow(btn) {
         const row = btn.closest("tr");
-        const inputs = row.querySelectorAll("input");
-        const actionCell = row.querySelector(".action-buttons");
-
-        // Enable editing
         row.classList.add("editing");
-        inputs.forEach((input) => (input.disabled = false));
-
-        // Change buttons
-        actionCell.innerHTML = `
-          <button class="save-btn" onclick="saveRow(this)">
-            <i class="fas fa-save"></i> Save
-          </button>
-          <button class="cancel-btn" onclick="cancelEdit(this)">
-            <i class="fas fa-times"></i> Cancel
-          </button>
-        `;
+        row.querySelectorAll("input.q-mark").forEach((input) => {
+          input.removeAttribute("readonly");
+        });
+        row.querySelector(".edit-btn").style.display = "none";
+        row.querySelector(".save-btn").style.display = "inline-block";
+        row.querySelector(".cancel-btn").style.display = "inline-block";
+        row.querySelector(".delete-btn").style.display = "none";
       }
 
-      function saveRow(btn) {
+      function saveEdit(btn) {
         const row = btn.closest("tr");
-        const rollNumber = row.dataset.roll;
-        const inputs = row.querySelectorAll("input");
-        const questions = {};
-        let totalMarks = 0;
+        const resultId = row.dataset.resultId; // Get result ID
+        const rollNumber = row.dataset.roll; // For delete method, if needed
+        const totalMarks = parseFloat(
+          row.querySelector(".total-marks-display").value
+        );
 
-        // Collect question marks
-        inputs.forEach((input) => {
+        const questionData = {};
+        row.querySelectorAll(".q-mark").forEach((input) => {
           const q = input.dataset.q;
           const part = input.dataset.part;
-          const value = parseInt(input.value) || 0;
-
-          if (!questions[`Q${q}`]) {
-            questions[`Q${q}`] = { a: 0, b: 0, c: 0, d: 0 };
+          if (!questionData[q]) {
+            questionData[q] = {};
           }
-          questions[`Q${q}`][part] = value;
-          totalMarks += value;
+          questionData[q][part] = parseFloat(input.value) || 0;
         });
 
-        // Send update request
         fetch("/api/update-marks", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            roll_number: rollNumber,
-            class_year: currentYear,
-            subject: currentSubject,
-            exam_type: currentExamType,
-            questions: questions,
-            total_marks: totalMarks,
+            result_id: resultId, // Send result_id
+            question_data: questionData,
+            total_marks: totalMarks, // This is now redundant if updated on backend, but ok to send.
           }),
         })
           .then((response) => response.json())
           .then((data) => {
             if (data.success) {
-              // Update total marks display
-              row.querySelector("td:nth-last-child(2)").textContent =
-                totalMarks;
-
-              // Reset row state
-              row.classList.remove("editing");
-              inputs.forEach((input) => (input.disabled = true));
-
-              // Restore action buttons
-              const actionCell = row.querySelector(".action-buttons");
-              actionCell.innerHTML = `
-                <button class="edit-btn" onclick="editRow(this)">
-                  <i class="fas fa-edit"></i> Edit
-                </button>
-                <button class="delete-btn" onclick="deleteRow(this)">
-                  <i class="fas fa-trash"></i> Delete
-                </button>
-              `;
-
               alert("Marks updated successfully!");
+              row.classList.remove("editing");
+              row.querySelectorAll("input.q-mark").forEach((input) => {
+                input.setAttribute("readonly", true);
+              });
+              row.querySelector(".edit-btn").style.display = "inline-block";
+              row.querySelector(".save-btn").style.display = "none";
+              row.querySelector(".cancel-btn").style.display = "none";
+              row.querySelector(".delete-btn").style.display = "inline-block";
+              // Re-fetch to update total marks and COs after save
+              viewMarks();
             } else {
               alert(data.message || "Failed to update marks");
             }
@@ -442,8 +502,15 @@
       function cancelEdit(btn) {
         const row = btn.closest("tr");
         row.classList.remove("editing");
+        row.querySelectorAll("input.q-mark").forEach((input) => {
+          input.setAttribute("readonly", true);
+        });
+        row.querySelector(".edit-btn").style.display = "inline-block";
+        row.querySelector(".save-btn").style.display = "none";
+        row.querySelector(".cancel-btn").style.display = "none";
+        row.querySelector(".delete-btn").style.display = "inline-block";
 
-        // Refresh the marks view to restore original values
+        // Re-fetch the data to revert any unsaved changes
         viewMarks();
       }
 
@@ -462,7 +529,7 @@
           },
           body: JSON.stringify({
             roll_number: rollNumber,
-            class_year: currentYear,
+            class_year: currentClassYear,
             subject: currentSubject,
             exam_type: currentExamType,
           }),

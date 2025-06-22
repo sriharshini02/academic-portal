@@ -5,6 +5,8 @@
     <div class="teacher-info">
       <h2>{{ teacher_name }}</h2>
       <p>{{ department }}</p>
+      <p>{{ specialization }}</p>
+      <!-- Added specialization -->
     </div>
   </div>
 
@@ -47,6 +49,24 @@
         </a>
       </li>
       <li class="nav-item">
+        <a
+          href="{{ url_for('add_course_page') }}"
+          class="nav-link {% if request.endpoint == 'add_course_page' %}active{% endif %}"
+        >
+          <i class="fas fa-book"></i>
+          <span>Add My Course</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a
+          href="{{ url_for('teacher_co_performance_page') }}"
+          class="nav-link {% if request.endpoint == 'teacher_co_performance_page' %}active{% endif %}"
+        >
+          <i class="fas fa-award"></i>
+          <span>CO Performance</span>
+        </a>
+      </li>
+      <li class="nav-item">
         <a href="{{ url_for('logout') }}" class="nav-link">
           <i class="fas fa-sign-out-alt"></i>
           <span>Logout</span>
@@ -58,6 +78,7 @@
 
 <!-- Sidebar Styles -->
 <style>
+  /* Keep existing sidebar styles from your previous files */
   .sidebar {
     background: #8b5cf6;
     color: white;
@@ -95,40 +116,32 @@
     color: rgba(255, 255, 255, 0.8);
   }
 
-  .nav-menu {
+  .nav-menu ul {
     list-style: none;
+    padding: 0;
   }
 
   .nav-item {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
   }
 
   .nav-link {
     display: flex;
     align-items: center;
-    padding: 0.8rem 1rem;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
     color: white;
     text-decoration: none;
-    border-radius: 8px;
-    transition: all 0.3s ease;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   .nav-link:hover,
   .nav-link.active {
-    background: rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.2);
   }
 
   .nav-link i {
-    margin-right: 0.8rem;
-    font-size: 1.1rem;
-  }
-
-  @media (max-width: 768px) {
-    .dashboard-container {
-      grid-template-columns: 1fr;
-    }
-    .sidebar {
-      display: none;
-    }
+    font-size: 1.2rem;
   }
 </style>

@@ -38,412 +38,236 @@
         position: relative;
       }
 
-      .container {
-        width: 100%;
-        background: rgba(30, 41, 59, 0.8);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(139, 92, 246, 0.2);
-        padding: 30px;
-        border-radius: 20px;
-        position: relative;
-        z-index: 1;
-        animation: fadeInUp 1s ease-out;
+      h1 {
+        color: #8b5cf6;
+        margin-bottom: 1.5rem;
+        text-align: center;
       }
 
-      h1 {
-        text-align: center;
-        margin-bottom: 20px;
-        font-size: 1.5rem;
-        color: #8b5cf6; /* Purple color from dashboard */
-        font-weight: 700;
+      .upload-container {
+        background: #2d3748;
+        padding: 2rem;
+        border-radius: 8px;
+        max-width: 600px;
+        margin: 0 auto;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
       }
 
       .form-group {
-        margin-bottom: 15px;
+        margin-bottom: 1.5rem;
+        width: 100%;
       }
 
       .form-group label {
         display: block;
-        margin-bottom: 6px;
-        font-weight: 500;
-        color: #8b5cf6; /* Purple color from dashboard */
+        margin-bottom: 0.5rem;
+        color: #a0aec0;
       }
 
-      .form-group select,
-      .form-group input {
+      .form-group input[type="text"],
+      .form-group select {
         width: 100%;
-        padding: 10px;
-        background: rgba(30, 41, 59, 0.5);
-        border: 1px solid rgba(139, 92, 246, 0.2);
-        border-radius: 8px;
-        font-size: 0.9rem;
+        padding: 0.75rem;
+        border-radius: 4px;
+        border: 1px solid #4a5568;
+        background: #1a202c;
         color: white;
-      }
-
-      .folder-upload-container {
-        background: rgba(30, 41, 59, 0.5);
-        padding: 20px;
-        border-radius: 8px;
-        border: 1px solid rgba(139, 92, 246, 0.2);
-        text-align: center;
-        margin-bottom: 15px;
-      }
-
-      .custom-file-upload {
-        background: #8b5cf6; /* Purple color from dashboard */
-        color: white;
-        padding: 8px 16px;
-        border-radius: 8px;
-        cursor: pointer;
-        display: inline-block;
-        font-weight: 500;
-        transition: all 0.3s ease;
-      }
-
-      .custom-file-upload:hover {
-        background: #7c3aed; /* Slightly darker purple */
-        transform: translateY(-2px);
-      }
-
-      .upload-instructions {
-        margin-top: 10px;
-        font-size: 0.8em;
-        color: rgba(255, 255, 255, 0.7);
-      }
-
-      .selected-files {
-        margin-top: 10px;
-        padding: 8px;
-        background: rgba(30, 41, 59, 0.5);
-        border-radius: 8px;
-        max-height: 80px;
-        overflow-y: auto;
-        font-size: 0.8em;
-        color: rgba(255, 255, 255, 0.7);
-      }
-
-      button {
-        width: 100%;
-        padding: 12px;
-        background: #8b5cf6; /* Purple color from dashboard */
-        color: white;
-        border: none;
-        border-radius: 8px;
         font-size: 1rem;
-        font-weight: 500;
+      }
+
+      .form-group input[type="text"]:focus,
+      .form-group select:focus {
+        outline: none;
+        border-color: #8b5cf6;
+        box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.5);
+      }
+
+      .file-input-group {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 1.5rem;
+        border: 2px dashed #8b5cf6;
+        border-radius: 8px;
+        padding: 2rem;
         cursor: pointer;
-        transition: all 0.3s ease;
-        margin-top: 10px;
+        transition: border-color 0.3s ease;
       }
 
-      button:hover {
-        background: #7c3aed; /* Slightly darker purple */
-        transform: translateY(-2px);
+      .file-input-group:hover {
+        border-color: #7c3aed;
       }
 
-      button:disabled {
-        background: rgba(139, 92, 246, 0.5);
-        cursor: not-allowed;
+      .file-input-group i {
+        font-size: 3rem;
+        color: #8b5cf6;
+        margin-bottom: 1rem;
       }
 
-      input[type="file"] {
+      .file-input-group p {
+        font-size: 1.1rem;
+        color: #a0aec0;
+        text-align: center;
+      }
+
+      .file-input-group input[type="file"] {
         display: none;
       }
 
-      .decoration-circle {
-        position: absolute;
-        border-radius: 50%;
-        filter: blur(100px);
-        z-index: 0;
+      .file-list {
+        list-style: none;
+        padding: 0;
+        width: 100%;
+        margin-top: 1rem;
+        max-height: 150px;
+        overflow-y: auto;
+        border-top: 1px solid #4a5568;
+        padding-top: 1rem;
       }
 
-      .circle-1 {
-        width: 600px;
-        height: 600px;
-        background: rgba(139, 92, 246, 0.15);
-        top: -300px;
-        right: -150px;
+      .file-list li {
+        background: #1a202c;
+        padding: 0.75rem;
+        border-radius: 4px;
+        margin-bottom: 0.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
       }
 
-      .circle-2 {
-        width: 400px;
-        height: 400px;
-        background: rgba(139, 92, 246, 0.15);
-        bottom: -200px;
-        left: -100px;
+      .file-list li .file-name {
+        flex-grow: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
-      @keyframes fadeInUp {
-        from {
+      .file-list li .remove-file-btn {
+        background: none;
+        border: none;
+        color: #ef4444;
+        font-size: 1.2rem;
+        cursor: pointer;
+        margin-left: 1rem;
+      }
+
+      .submit-button {
+        display: block;
+        width: 100%;
+        padding: 0.75rem;
+        background: #8b5cf6;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1.1rem;
+        transition: background-color 0.3s ease;
+      }
+
+      .submit-button:disabled {
+        background: #4a5568;
+        cursor: not-allowed;
+      }
+
+      .submit-button:hover:not(:disabled) {
+        background: #7c3aed;
+      }
+
+      .upload-progress {
+        display: none; /* Hidden by default */
+        flex-direction: column;
+        align-items: center;
+        margin-top: 1.5rem;
+        width: 100%;
+      }
+
+      .progress-icon {
+        font-size: 2.5rem;
+        color: #8b5cf6;
+        margin-bottom: 1rem;
+      }
+
+      .progress-text {
+        color: #a0aec0;
+        font-size: 1rem;
+        text-align: center;
+      }
+
+      /* Flash messages */
+      .flash-messages {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        width: auto;
+        max-width: 90%;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .flash-message {
+        background-color: #4a4a4a;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        opacity: 0;
+        animation: fadeInOut 4s forwards;
+      }
+
+      .flash-message.error {
+        background-color: #ef4444;
+      }
+
+      .flash-message.success {
+        background-color: #34d399;
+      }
+
+      @keyframes fadeInOut {
+        0% {
           opacity: 0;
-          transform: translateY(20px);
+          transform: translateY(-20px);
         }
-        to {
+        10% {
           opacity: 1;
           transform: translateY(0);
         }
-      }
-
-      @media (max-width: 480px) {
-        .container {
-          padding: 20px;
-        }
-        h1 {
-          font-size: 1.2rem;
-        }
-      }
-
-      .loading {
-        opacity: 0.7;
-        pointer-events: none;
-      }
-
-      @keyframes spin {
-        0% {
-          transform: rotate(0deg);
+        90% {
+          opacity: 1;
+          transform: translateY(0);
         }
         100% {
-          transform: rotate(360deg);
+          opacity: 0;
+          transform: translateY(-20px);
         }
       }
 
-      .fa-spinner {
-        animation: spin 1s linear infinite;
-      }
-
-      /* Add loading overlay */
-      .upload-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.7);
-        display: none;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-      }
-
-      .upload-overlay.active {
-        display: flex;
-      }
-
-      .upload-progress {
-        background: #1e293b;
-        padding: 2rem;
-        border-radius: 1rem;
-        text-align: center;
-        color: white;
-      }
-
-      .upload-options {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 2rem;
-        margin: 2rem 0;
-      }
-
-      .upload-option {
-        background: rgba(30, 41, 59, 0.5);
-        padding: 1.5rem;
-        border-radius: 1rem;
-        border: 1px solid rgba(139, 92, 246, 0.2);
-      }
-
-      .upload-option h3 {
-        color: #8b5cf6;
-        margin-bottom: 1rem;
-        font-size: 1.1rem;
-        text-align: center;
-      }
-
-      .upload-area {
-        border: 2px dashed rgba(139, 92, 246, 0.3);
-        border-radius: 0.5rem;
-        padding: 2rem;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-      }
-
-      .upload-area:hover {
-        border-color: #8b5cf6;
-        background: rgba(139, 92, 246, 0.1);
-      }
-
-      .upload-area i {
-        font-size: 2rem;
-        color: #8b5cf6;
-        margin-bottom: 1rem;
-      }
-
-      .file-list {
-        margin-top: 1rem;
-        padding: 0.5rem;
-        background: rgba(30, 41, 59, 0.3);
-        border-radius: 0.5rem;
-        max-height: 150px;
-        overflow-y: auto;
-        font-size: 0.9rem;
-      }
-
+      /* Responsive adjustments */
       @media (max-width: 768px) {
-        .upload-options {
-          grid-template-columns: 1fr;
+        .dashboard-container {
+          grid-template-columns: 1fr; /* Stack sidebar and main content */
         }
-      }
-
-      .file-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.25rem 0;
-        font-size: 0.85rem;
-        color: rgba(255, 255, 255, 0.8);
-      }
-
-      .file-item i {
-        color: #8b5cf6;
-      }
-
-      .file-count {
-        color: #8b5cf6;
-        font-weight: 500;
-        margin-bottom: 0.5rem;
-      }
-
-      .no-files {
-        color: rgba(255, 255, 255, 0.5);
-        font-style: italic;
-        text-align: center;
-      }
-
-      .upload-area small {
-        display: block;
-        margin-top: 0.5rem;
-        color: rgba(255, 255, 255, 0.6);
-        font-size: 0.8rem;
-      }
-
-      .form-actions {
-        margin-top: 2rem;
-        text-align: center;
-      }
-
-      .submit-btn {
-        background: #8b5cf6;
-        color: white;
-        padding: 1rem 2rem;
-        border: none;
-        border-radius: 8px;
-        font-size: 1rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        min-width: 200px;
-        justify-content: center;
-      }
-
-      .submit-btn:hover {
-        background: #7c3aed;
-        transform: translateY(-2px);
-      }
-
-      .submit-btn:disabled {
-        background: rgba(139, 92, 246, 0.5);
-        cursor: not-allowed;
-        transform: none;
-      }
-
-      .submit-btn i {
-        font-size: 1.2rem;
-      }
-
-      .upload-progress {
-        margin-top: 1rem;
-        color: #8b5cf6;
-        font-size: 0.9rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-      }
-
-      /* Add styles for file validation */
-      .file-item.invalid {
-        color: #ef4444;
-      }
-
-      .file-item.valid {
-        color: #10b981;
-      }
-
-      .validation-message {
-        margin-top: 1rem;
-        padding: 0.75rem;
-        border-radius: 8px;
-        font-size: 0.9rem;
-        display: none;
-      }
-
-      .validation-message.error {
-        background: rgba(239, 68, 68, 0.1);
-        color: #ef4444;
-        border: 1px solid rgba(239, 68, 68, 0.2);
-      }
-
-      .validation-message.success {
-        background: rgba(16, 185, 129, 0.1);
-        color: #10b981;
-        border: 1px solid rgba(16, 185, 129, 0.2);
-      }
-
-      /* Improve the file list appearance */
-      .file-list {
-        margin-top: 1rem;
-        background: rgba(30, 41, 59, 0.3);
-        border-radius: 8px;
-        padding: 0.75rem;
-        max-height: 200px;
-        overflow-y: auto;
-      }
-
-      .file-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem;
-        border-radius: 4px;
-        transition: all 0.2s ease;
-      }
-
-      .file-item:hover {
-        background: rgba(139, 92, 246, 0.1);
-      }
-
-      .file-item i {
-        min-width: 20px;
-      }
-
-      /* Add loading animation */
-      @keyframes pulse {
-        0% {
-          opacity: 1;
+        .sidebar {
+          width: 100%;
+          min-height: auto;
+          padding: 1rem;
         }
-        50% {
-          opacity: 0.5;
+        .main-content {
+          padding: 1.5rem;
         }
-        100% {
-          opacity: 1;
+        .upload-container {
+          padding: 1.5rem;
         }
-      }
-
-      .processing {
-        animation: pulse 1.5s infinite;
+        .filter-group {
+          width: 100%;
+          min-width: unset;
+        }
       }
     </style>
   </head>
@@ -452,214 +276,151 @@
       {% include 'sidebar.html' %}
 
       <main class="main-content">
-        <div class="container">
-          <h1>Upload Answer Sheets</h1>
+        <h1>Upload Answer Sheets</h1>
+
+        <div class="flash-messages">
+          {% with messages = get_flashed_messages(with_categories=true) %} {% if
+          messages %} {% for category, message in messages %}
+          <div class="flash-message {{ category }}">{{ message }}</div>
+          {% endfor %} {% endif %} {% endwith %}
+        </div>
+
+        <div class="upload-container">
           <form
             id="uploadForm"
-            action="{{ url_for('upload_folder') }}"
+            action="{{ url_for('process_upload') }}"
             method="POST"
             enctype="multipart/form-data"
           >
             <div class="form-group">
-              <label for="class">Class</label>
-              <select id="class" name="class" required>
-                <option value="">Select Class</option>
-                <option value="FY">First Year</option>
-                <option value="SY">Second Year</option>
-                <option value="TY">Third Year</option>
-                <option value="Final">Final Year</option>
+              <label for="classYear">Class Year:</label>
+              <select id="classYear" name="classYear" required>
+                <option value="">Select Class Year</option>
+                {% for year in class_years %}
+                <option value="{{ year }}">{{ year }}</option>
+                {% endfor %}
               </select>
             </div>
             <div class="form-group">
-              <label for="subject">Subject</label>
+              <label for="subject">Subject (Course Name):</label>
               <select id="subject" name="subject" required>
                 <option value="">Select Subject</option>
-                <option value="java">Java</option>
-                <option value="python">Python</option>
+                {% for course in teacher_courses %}
+                <option value="{{ course.course_id }}">
+                  {{ course.course_name }} ({{ course.course_id }})
+                </option>
+                {% endfor %}
               </select>
             </div>
             <div class="form-group">
-              <label for="examType">Exam Type</label>
+              <label for="examType">Exam Type:</label>
               <select id="examType" name="examType" required>
                 <option value="">Select Exam Type</option>
-                <option value="MID1">Mid Term 1</option>
-                <option value="MID2">Mid Term 2</option>
+                {% for exam_type_name in exam_types %}
+                <option value="{{ exam_type_name }}">
+                  {{ exam_type_name }}
+                </option>
+                {% endfor %}
               </select>
             </div>
-            <div class="upload-options">
-              <div class="upload-option">
-                <h3>Upload Folder</h3>
-                <input
-                  type="file"
-                  id="folderUpload"
-                  name="folder[]"
-                  webkitdirectory
-                  mozdirectory
-                  directory
-                  multiple
-                  accept="image/*"
-                  style="display: none"
-                />
-                <div class="upload-area" id="folderDropZone">
-                  <i class="fas fa-folder-plus"></i>
-                  <p>Click to select folder</p>
-                  <small>(Only image files will be processed)</small>
-                </div>
-                <div id="folderFileList" class="file-list"></div>
-              </div>
 
-              <div class="upload-option">
-                <h3>Upload Individual Files</h3>
-                <input
-                  type="file"
-                  id="fileUpload"
-                  name="files[]"
-                  multiple
-                  accept="image/*"
-                  style="display: none"
-                />
-                <div class="upload-area" id="fileDropZone">
-                  <i class="fas fa-images"></i>
-                  <p>Drop image files here or click to browse</p>
-                </div>
-                <div id="fileList" class="file-list"></div>
-              </div>
+            <div
+              class="file-input-group"
+              onclick="document.getElementById('fileUpload').click();"
+            >
+              <i class="fas fa-file-upload"></i>
+              <p>Click or drag files here to upload</p>
+              <input
+                type="file"
+                id="fileUpload"
+                name="fileUpload"
+                accept="image/*"
+                multiple
+              />
             </div>
-            <div class="form-actions">
-              <button type="submit" class="submit-btn" id="submitBtn">
-                <i class="fas fa-upload"></i> Process Images
-              </button>
-              <div
-                class="upload-progress"
-                id="uploadProgress"
-                style="display: none"
-              >
-                <i class="fas fa-spinner fa-spin"></i>
-                <span id="progressText">Processing images...</span>
-              </div>
+
+            <div
+              class="file-input-group"
+              onclick="document.getElementById('folderUpload').click();"
+            >
+              <i class="fas fa-folder-open"></i>
+              <p>Click or drag folder here to upload</p>
+              <input
+                type="file"
+                id="folderUpload"
+                name="folderUpload"
+                webkitdirectory
+                mozdirectory
+                msdirectory
+                odirectory
+                directory
+                multiple
+              />
             </div>
+
+            <ul id="fileList" class="file-list"></ul>
+
+            <button type="submit" class="submit-button" id="submitBtn" disabled>
+              <i class="fas fa-upload"></i> Upload Marks
+            </button>
           </form>
+
+          <div class="upload-progress" id="uploadProgress">
+            <i class="fas fa-spinner fa-spin progress-icon"></i>
+            <span class="progress-text">Uploading and processing...</span>
+          </div>
         </div>
-        <div class="decoration-circle circle-1"></div>
-        <div class="decoration-circle circle-2"></div>
       </main>
     </div>
 
     <script>
       const folderUpload = document.getElementById("folderUpload");
       const fileUpload = document.getElementById("fileUpload");
-      const folderDropZone = document.getElementById("folderDropZone");
-      const fileDropZone = document.getElementById("fileDropZone");
-      const folderFileList = document.getElementById("folderFileList");
       const fileList = document.getElementById("fileList");
-      const uploadForm = document.getElementById("uploadForm");
       const submitBtn = document.getElementById("submitBtn");
+      const uploadForm = document.getElementById("uploadForm");
       const uploadProgress = document.getElementById("uploadProgress");
-      const progressText = document.getElementById("progressText");
+      const progressText = uploadProgress.querySelector(".progress-text");
 
-      // Folder upload handling
-      folderDropZone.addEventListener("click", () => folderUpload.click());
-
-      folderUpload.addEventListener("change", function () {
-        const files = Array.from(this.files).filter((file) =>
-          file.type.startsWith("image/")
-        );
-
-        folderFileList.innerHTML =
-          files.length > 0
-            ? `<div class="file-count">Selected ${files.length} image(s):</div>` +
-              files
-                .map(
-                  (file) => `<div class="file-item">
-              <i class="fas fa-image"></i>
-              ${file.webkitRelativePath || file.name}
-            </div>`
-                )
-                .join("")
-            : '<div class="no-files">No image files selected</div>';
-      });
-
-      // Individual file upload handling
-      fileDropZone.addEventListener("click", () => fileUpload.click());
-      fileDropZone.addEventListener("dragover", handleDragOver);
-      fileDropZone.addEventListener("dragleave", handleDragLeave);
-      fileDropZone.addEventListener("drop", handleDrop);
-
-      function handleDragOver(e) {
-        e.preventDefault();
-        this.style.borderColor = "#8B5CF6";
-        this.style.background = "rgba(139, 92, 246, 0.1)";
+      function updateFileList(input) {
+        fileList.innerHTML = "";
+        if (input.files.length > 0) {
+          for (let i = 0; i < input.files.length; i++) {
+            const file = input.files[i];
+            const li = document.createElement("li");
+            li.innerHTML = `
+              <span class="file-name">${file.name}</span>
+              <button class="remove-file-btn" data-index="${i}"><i class="fas fa-times"></i></button>
+            `;
+            fileList.appendChild(li);
+          }
+          fileList.style.display = "block";
+        } else {
+          fileList.style.display = "none";
+        }
       }
 
-      function handleDragLeave(e) {
-        e.preventDefault();
-        this.style.borderColor = "rgba(139, 92, 246, 0.3)";
-        this.style.background = "transparent";
-      }
-
-      function handleDrop(e) {
-        e.preventDefault();
-        this.style.borderColor = "rgba(139, 92, 246, 0.3)";
-        this.style.background = "transparent";
-
-        const files = Array.from(e.dataTransfer.files).filter((file) =>
-          file.type.startsWith("image/")
-        );
-
-        // Create a new DataTransfer object
-        const dataTransfer = new DataTransfer();
-        files.forEach((file) => dataTransfer.items.add(file));
-        fileUpload.files = dataTransfer.files;
-
-        updateFileList(files);
-      }
-
-      function updateFileList(files) {
-        fileList.innerHTML =
-          files.length > 0
-            ? `<div class="file-count">Selected ${files.length} image(s):</div>` +
-              files
-                .map(
-                  (file) => `<div class="file-item">
-              <i class="fas fa-image"></i>
-              ${file.name}
-            </div>`
-                )
-                .join("")
-            : '<div class="no-files">No image files selected</div>';
-      }
-
-      fileUpload.addEventListener("change", function () {
-        const files = Array.from(this.files).filter((file) =>
-          file.type.startsWith("image/")
-        );
-        updateFileList(files);
-      });
-
-      // Add form validation and submission handling
       function validateForm() {
-        const classValue = document.getElementById("class").value;
-        const subjectValue = document.getElementById("subject").value;
-        const examTypeValue = document.getElementById("examType").value;
+        const classYear = document.getElementById("classYear").value.trim();
+        const subject = document.getElementById("subject").value.trim();
+        const examType = document.getElementById("examType").value.trim();
         const hasFiles =
-          folderUpload.files.length > 0 || fileUpload.files.length > 0;
+          fileUpload.files.length > 0 || folderUpload.files.length > 0;
 
-        submitBtn.disabled = !(
-          classValue &&
-          subjectValue &&
-          examTypeValue &&
-          hasFiles
-        );
+        submitBtn.disabled = !(classYear && subject && examType && hasFiles);
       }
 
-      // Add validation listeners
-      document.getElementById("class").addEventListener("change", validateForm);
+      // Add event listeners for input fields and file inputs
+      document
+        .getElementById("classYear")
+        .addEventListener("change", validateForm); // Changed from 'input' to 'change'
       document
         .getElementById("subject")
-        .addEventListener("change", validateForm);
+        .addEventListener("change", validateForm); // Changed from 'input' to 'change'
       document
         .getElementById("examType")
-        .addEventListener("change", validateForm);
+        .addEventListener("change", validateForm); // Changed from 'input' to 'change'
+
       folderUpload.addEventListener("change", () => {
         updateFileList(folderUpload);
         validateForm();
@@ -705,9 +466,6 @@
           submitBtn.innerHTML = '<i class="fas fa-upload"></i> Try Again';
         }
       });
-
-      // Initialize form validation
-      validateForm();
     </script>
   </body>
 </html>

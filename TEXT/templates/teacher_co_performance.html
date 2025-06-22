@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Teacher CO Performance</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Poppins", sans-serif;
+      }
+
+      body {
+        min-height: 100vh;
+        background: #1a1a1a;
+        color: white;
+      }
+
+      .dashboard-container {
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        min-height: 100vh;
+      }
+
+      .main-content {
+        padding: 2rem;
+        background: #1e293b;
+      }
+
+      h1 {
+        color: #8b5cf6;
+        margin-bottom: 1.5rem;
+        text-align: center;
+      }
+
+      .filter-controls {
+        background: #2d3748;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: flex-end;
+      }
+
+      .filter-group {
+        display: flex;
+        flex-direction: column;
+        min-width: 150px;
+      }
+
+      .filter-group label {
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        color: #a0aec0;
+      }
+
+      .filter-group select {
+        padding: 0.75rem;
+        border-radius: 4px;
+        border: 1px solid #4a5568;
+        background: #1a202c;
+        color: white;
+        font-size: 1rem;
+      }
+
+      .filter-group select:focus {
+        outline: none;
+        border-color: #8b5cf6;
+        box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.5);
+      }
+
+      .filter-group button {
+        padding: 0.75rem 1.5rem;
+        background: #8b5cf6;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background-color 0.3s ease;
+      }
+
+      .filter-group button:hover {
+        background: #7c3aed;
+      }
+
+      .co-table-container {
+        background: #2d3748;
+        padding: 1.5rem;
+        border-radius: 8px;
+        overflow-x: auto;
+        margin-bottom: 2rem;
+      }
+
+      .co-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+        white-space: nowrap;
+      }
+
+      .co-table th,
+      .co-table td {
+        padding: 0.8rem 1rem;
+        text-align: left;
+        border-bottom: 1px solid #4a5568;
+      }
+
+      .co-table th {
+        background: #1a202c;
+        color: #a0aec0;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+      }
+
+      .co-table td {
+        color: #e2e8f0;
+        font-size: 0.95rem;
+      }
+
+      .co-table tbody tr:hover {
+        background: #3a475a;
+      }
+
+      .co-attainment-cell {
+        font-weight: bold;
+        color: #34d399; /* Green for good attainment */
+      }
+      .co-attainment-cell.low {
+        color: #f87171; /* Red for low attainment */
+      }
+
+      .overall-co-chart-container {
+        background: #2d3748;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        max-width: 800px; /* Limit width for readability */
+        margin: 0 auto 2rem auto; /* Center and add bottom margin */
+      }
+
+      .overall-co-chart-container h3 {
+        color: #8b5cf6;
+        margin-bottom: 1rem;
+        text-align: center;
+      }
+
+      .overall-co-chart-container canvas {
+        max-height: 400px;
+        width: 100% !important;
+        height: 100% !important;
+      }
+
+      .message-box {
+        text-align: center;
+        padding: 1rem;
+        margin: 1rem 0;
+        border-radius: 8px;
+        font-weight: 500;
+      }
+      .message-box.info {
+        background-color: #60a5fa; /* blue */
+        color: white;
+      }
+      .message-box.error {
+        background-color: #f87171; /* red */
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dashboard-container">
+      {% include 'sidebar.html' %}
+
+      <main class="main-content">
+        <h1>Student Performance by Course Outcome</h1>
+
+        <div class="filter-controls">
+          <div class="filter-group">
+            <label for="courseSelect">Course:</label>
+            <select id="courseSelect">
+              <option value="">Select Course</option>
+              {% for course in teacher_courses %}
+              <option value="{{ course.course_id }}">
+                {{ course.course_name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="examTypeSelect">Exam Type:</label>
+            <select id="examTypeSelect">
+              <option value="">Select Exam</option>
+              {% for exam_type in exam_types %}
+              <option value="{{ exam_type }}">{{ exam_type }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="classYearSelect">Class Year:</label>
+            <select id="classYearSelect">
+              <option value="">Select Class Year</option>
+              {% for year in class_years %}
+              <option value="{{ year }}">{{ year }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="filter-group">
+            <button onclick="fetchCOPerformance()">View CO Performance</button>
+          </div>
+        </div>
+
+        <div id="loadingMessage" class="message-box info" style="display: none">
+          Loading CO performance data...
+        </div>
+        <div id="errorMessage" class="message-box error" style="display: none">
+          An error occurred while loading data.
+        </div>
+        <div id="noDataMessage" class="message-box info" style="display: none">
+          No CO performance data available for the selected filters.
+        </div>
+
+        <!-- Overall CO Attainment Chart -->
+        <div
+          class="overall-co-chart-container"
+          id="overallCoChartContainer"
+          style="display: none"
+        >
+          <h3>Overall CO Attainment (%)</h3>
+          <canvas id="overallCoChart"></canvas>
+        </div>
+
+        <div
+          class="co-table-container"
+          id="coTableContainer"
+          style="display: none"
+        >
+          <h3>Individual Student CO Attainment (%)</h3>
+          <table class="co-table">
+            <thead>
+              <tr id="coTableHeader">
+                <th>Roll No</th>
+                <!-- CO labels will be dynamically inserted here -->
+              </tr>
+            </thead>
+            <tbody id="coTableBody">
+              <!-- Student CO data will be loaded here by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      let overallCoChartInstance = null; // To store the Chart.js instance
+
+      document.addEventListener("DOMContentLoaded", () => {
+        // Restore filter selections from localStorage
+        const storedCourse = localStorage.getItem("selectedCoCourse");
+        const storedExamType = localStorage.getItem("selectedCoExamType");
+        const storedClassYear = localStorage.getItem("selectedCoClassYear");
+
+        if (storedCourse)
+          document.getElementById("courseSelect").value = storedCourse;
+        if (storedExamType)
+          document.getElementById("examTypeSelect").value = storedExamType;
+        if (storedClassYear)
+          document.getElementById("classYearSelect").value = storedClassYear;
+
+        // Auto-fetch if all filters are set
+        if (storedCourse && storedExamType && storedClassYear) {
+          fetchCOPerformance();
+        }
+      });
+
+      // Save filter selections to localStorage when changed
+      document
+        .getElementById("courseSelect")
+        .addEventListener("change", (e) =>
+          localStorage.setItem("selectedCoCourse", e.target.value)
+        );
+      document
+        .getElementById("examTypeSelect")
+        .addEventListener("change", (e) =>
+          localStorage.setItem("selectedCoExamType", e.target.value)
+        );
+      document
+        .getElementById("classYearSelect")
+        .addEventListener("change", (e) =>
+          localStorage.setItem("selectedCoClassYear", e.target.value)
+        );
+
+      async function fetchCOPerformance() {
+        const courseId = document.getElementById("courseSelect").value;
+        const examType = document.getElementById("examTypeSelect").value;
+        const classYear = document.getElementById("classYearSelect").value;
+
+        const loadingMessage = document.getElementById("loadingMessage");
+        const errorMessage = document.getElementById("errorMessage");
+        const noDataMessage = document.getElementById("noDataMessage");
+        const coTableContainer = document.getElementById("coTableContainer");
+        const overallCoChartContainer = document.getElementById(
+          "overallCoChartContainer"
+        );
+
+        // Hide all messages and containers
+        loadingMessage.style.display = "none";
+        errorMessage.style.display = "none";
+        noDataMessage.style.display = "none";
+        coTableContainer.style.display = "none";
+        overallCoChartContainer.style.display = "none";
+
+        // Clear previous chart if exists
+        if (overallCoChartInstance) {
+          overallCoChartInstance.destroy();
+          overallCoChartInstance = null;
+        }
+
+        if (!courseId || !examType || !classYear) {
+          noDataMessage.textContent =
+            "Please select a Course, Exam Type, and Class Year.";
+          noDataMessage.style.display = "block";
+          return;
+        }
+
+        loadingMessage.style.display = "block";
+
+        try {
+          const response = await fetch(
+            `/api/teacher/co-performance-data?course_id=${courseId}&exam_type=${examType}&class_year=${classYear}`
+          );
+          const data = await response.json();
+
+          loadingMessage.style.display = "none";
+
+          if (data.success && data.co_data.length > 0) {
+            displayCOTable(data.co_data, data.co_labels);
+            displayOverallCoChart(data.co_data, data.co_labels);
+            coTableContainer.style.display = "block";
+            overallCoChartContainer.style.display = "block";
+          } else {
+            noDataMessage.textContent =
+              data.message ||
+              "No CO performance data available for the selected filters.";
+            noDataMessage.style.display = "block";
+          }
+        } catch (error) {
+          loadingMessage.style.display = "none";
+          errorMessage.textContent = `Error loading CO performance data: ${error.message}`;
+          errorMessage.style.display = "block";
+          console.error("Error fetching CO performance:", error);
+        }
+      }
+
+      function displayCOTable(co_data, co_labels) {
+        const coTableHeader = document.getElementById("coTableHeader");
+        const coTableBody = document.getElementById("coTableBody");
+
+        // Clear previous table content
+        coTableHeader.innerHTML = "<th>Roll No</th>";
+        coTableBody.innerHTML = "";
+
+        // Add CO headers dynamically
+        co_labels.forEach((co_label) => {
+          coTableHeader.innerHTML += `<th>${co_label} (%)</th>`;
+        });
+
+        // Populate table body
+        co_data.forEach((student_row) => {
+          let rowHtml = `<tr><td>${student_row.roll_number}</td>`;
+          co_labels.forEach((co_label) => {
+            const attainment =
+              student_row[co_label] !== undefined ? student_row[co_label] : 0;
+            // Add a class for styling based on attainment (e.g., low for < 50%)
+            const attainmentClass = attainment < 50 ? "low" : "";
+            rowHtml += `<td class="co-attainment-cell ${attainmentClass}">${attainment}</td>`;
+          });
+          rowHtml += `</tr>`;
+          coTableBody.innerHTML += rowHtml;
+        });
+      }
+
+      function displayOverallCoChart(co_data, co_labels) {
+        const overallCoCtx = document.getElementById("overallCoChart");
+        if (!overallCoCtx) return;
+
+        // Calculate average attainment for each CO across all students
+        const co_averages = {};
+        const co_student_counts = {}; // To count how many students contributed to each CO
+
+        co_labels.forEach((co) => {
+          co_averages[co] = 0;
+          co_student_counts[co] = 0;
+        });
+
+        co_data.forEach((student_row) => {
+          co_labels.forEach((co) => {
+            if (student_row[co] !== undefined) {
+              co_averages[co] += student_row[co];
+              co_student_counts[co] += 1;
+            }
+          });
+        });
+
+        const chartData = co_labels.map((co) =>
+          co_student_counts[co] > 0
+            ? (co_averages[co] / co_student_counts[co]).toFixed(1)
+            : 0
+        );
+
+        // Destroy existing chart instance if any
+        if (overallCoChartInstance) {
+          overallCoChartInstance.destroy();
+        }
+
+        overallCoChartInstance = new Chart(overallCoCtx, {
+          type: "bar",
+          data: {
+            labels: co_labels,
+            datasets: [
+              {
+                label: "Average Attainment (%)",
+                data: chartData,
+                backgroundColor: [
+                  "rgba(139, 92, 246, 0.7)", // Purple
+                  "rgba(34, 197, 94, 0.7)", // Green
+                  "rgba(251, 191, 36, 0.7)", // Yellow
+                  "rgba(239, 68, 68, 0.7)", // Red
+                  "rgba(59, 130, 246, 0.7)", // Blue
+                  "rgba(100, 100, 200, 0.7)", // Custom color
+                ],
+                borderColor: [
+                  "rgba(139, 92, 246, 1)",
+                  "rgba(34, 197, 94, 1)",
+                  "rgba(251, 191, 36, 1)",
+                  "rgba(239, 68, 68, 1)",
+                  "rgba(59, 130, 246, 1)",
+                  "rgba(100, 100, 200, 1)",
+                ],
+                borderWidth: 1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 100, // Percentage
+                title: {
+                  display: true,
+                  text: "Attainment Percentage (%)",
+                  color: "rgba(255, 255, 255, 0.9)",
+                },
+                ticks: { color: "rgba(255, 255, 255, 0.7)" },
+                grid: { color: "rgba(255, 255, 255, 0.1)" },
+              },
+              x: {
+                ticks: { color: "rgba(255, 255, 255, 0.7)" },
+                grid: { color: "rgba(255, 255, 255, 0.1)" },
+              },
+            },
+            plugins: {
+              legend: {
+                display: false,
+              },
+              title: {
+                display: true,
+                text: "Class Average CO Attainment",
+                color: "rgba(255, 255, 255, 0.9)",
+              },
+            },
+          },
+        });
+      }
+    </script>
+  </body>
+</html>
